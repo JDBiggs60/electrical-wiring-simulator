@@ -169,10 +169,24 @@ function panelGraphic(): string {
 function switchGraphic(): string {
   const {x,y} = positions.switch;
   return `<g>${deviceLabel(x, y-58, 'SINGLE-POLE SWITCH', '2 brass screws · 1 ground', 'switch')}
-    <rect x="${x-8}" y="${y+24}" width="140" height="185" rx="3" fill="url(#panel-metal)" stroke="#6b7b80" stroke-width="2"/><rect x="${x+1}" y="${y+33}" width="122" height="167" rx="2" fill="#49565c" stroke="#9ca7a8"/><path d="M${x+5} ${y+55}v121m114-121v121" stroke="#35444c" stroke-width="3"/><rect x="${x+36}" y="${y}" width="53" height="231" rx="7" fill="url(#switch-metal)" stroke="#8b9385" filter="url(#device-shadow)"/><rect x="${x+24}" y="${y+34}" width="80" height="147" rx="8" fill="#ddd7c5" stroke="#aaa891"/><rect x="${x+30}" y="${y+45}" width="68" height="125" rx="6" fill="#f1e9d5" stroke="#c5bea7"/>
-    <title>Mounting screws at top and bottom are not wiring terminals.</title>${screw(x+62,y+16)}${screw(x+62,y+214)}
-    <rect x="${x+4}" y="${y+58}" width="30" height="24" rx="4" fill="#ac8542"/><rect x="${x+4}" y="${y+136}" width="30" height="24" rx="4" fill="#ac8542"/><rect x="${x+93}" y="${y+176}" width="25" height="24" rx="4" fill="#527e54"/>
-    <g data-action="switch" class="switch-toggle" role="button" tabindex="0" aria-label="Toggle light switch" aria-pressed="${switchOn}"><rect x="${x+40}" y="${y+58}" width="48" height="100" rx="5" fill="#998f78" stroke="#827a65"/><rect x="${x+45}" y="${y+62}" width="38" height="92" rx="3" fill="#c2b69b"/><path d="M${x+47},${y+(switchOn ? 72 : 106)}h34v32h-34Z" fill="url(#toggle-ivory)" stroke="#c6b999"/><text x="${x+64}" y="${y+55}" text-anchor="middle" class="tiny-label">ON</text><text x="${x+64}" y="${y+169}" text-anchor="middle" class="tiny-label">OFF</text></g>
+    <title>Residential single-pole toggle switch: two brass current terminals and one green screw bonded to the metal grounding yoke. No neutral connection.</title>
+    <rect x="${x-8}" y="${y+24}" width="140" height="185" rx="3" fill="url(#panel-metal)" stroke="#6b7b80" stroke-width="2"/>
+    <rect x="${x+1}" y="${y+33}" width="122" height="167" rx="2" fill="#354149" stroke="#9ca7a8"/>
+    <rect x="${x+19}" y="${y+38}" width="81" height="141" rx="6" fill="#302d27" stroke="#171918" stroke-width="2"/>
+    <path d="M${x+38} ${y}h48v35h10v137h-10v9h32v24H${x+86}v26H${x+38}v-52h-9V${y+35}h9Z" transform="translate(0 0)" fill="url(#switch-metal)" stroke="#78888e" filter="url(#device-shadow)"/>
+    <rect x="${x+53}" y="${y+9}" width="18" height="14" rx="7" fill="#354149" stroke="#7d8b90"/>
+    <rect x="${x+53}" y="${y+208}" width="18" height="14" rx="7" fill="#354149" stroke="#7d8b90"/>
+    <rect x="${x+4}" y="${y+58}" width="29" height="24" rx="3" fill="#a78035" stroke="#634a21"/>
+    <rect x="${x+4}" y="${y+136}" width="29" height="24" rx="3" fill="#a78035" stroke="#634a21"/>
+    <rect x="${x+35}" y="${y+38}" width="54" height="143" rx="7" fill="url(#toggle-ivory)" stroke="#a79d83" stroke-width="2"/>
+    <path d="M${x+41} ${y+46}h42m-42 126h42" stroke="#fffbee" stroke-width="2"/>
+    <g data-action="switch" class="switch-toggle" role="button" tabindex="0" aria-label="Toggle light switch" aria-pressed="${switchOn}">
+      <rect x="${x+46}" y="${y+71}" width="32" height="72" rx="4" fill="#645d4d" stroke="#ada082"/>
+      <path d="M${x+52} ${y+108}l-2 ${switchOn ? -28 : 28}h24l-2 ${switchOn ? 28 : -28}Z" fill="url(#toggle-ivory)" stroke="#aa9b7e" stroke-width="2"/>
+      <path d="M${x+50} ${y+(switchOn ? 80 : 136)}l3 ${switchOn ? -5 : 5}h18l3 ${switchOn ? 5 : -5}Z" fill="#fff9e7" stroke="#c6b999"/>
+      <text x="${x+62}" y="${y+61}" text-anchor="middle" class="tiny-label">ON</text>
+      <text x="${x+62}" y="${y+163}" text-anchor="middle" class="tiny-label">OFF</text>
+    </g>
     <text x="${x-5}" y="${y+48}" class="terminal-caption">A · LINE*</text><text x="${x-5}" y="${y+126}" class="terminal-caption">B · LOAD*</text><text x="${x+92}" y="${y+171}" class="terminal-caption">G</text>
     <text x="${x+64}" y="${y+242}" text-anchor="middle" class="board-note">SWITCH ${switchOn ? 'ON' : 'OFF'}</text></g>`;
 }
@@ -194,6 +208,10 @@ function lightGraphic(on: boolean): string {
 }
 function terminalGraphic(id: TerminalId): string {
   const p = point(id), t = terminals[id], selected = selectedTerminal === id;
+  if (id.startsWith('switch.')) {
+    const ground = t.kind === 'ground';
+    return `<g data-terminal="${id}" class="terminal ${selected ? 'selected' : ''}" role="button" tabindex="0" aria-label="${t.label}" aria-pressed="${selected}"><title>${t.label} · ${ground ? 'Green grounding screw on metal yoke' : 'Brass current-carrying screw'}</title><circle cx="${p.x}" cy="${p.y}" r="18" fill="transparent"/><circle cx="${p.x}" cy="${p.y}" r="12" fill="${ground ? '#325c35' : '#876323'}" stroke="#333b32"/><circle cx="${p.x}" cy="${p.y}" r="10" fill="url(#${ground ? 'green' : 'brass'}-screw)" stroke="${ground ? '#244d2b' : '#70521e'}"/><path d="M${p.x-7} ${p.y}h14m-7-4v8" stroke="${ground ? '#173c24' : '#634714'}" stroke-width="2"/><path d="M${p.x-6} ${p.y-5}q6-4 12 0" fill="none" stroke="${ground ? '#b0d193' : '#fff0ad'}" stroke-width="1.5"/><circle cx="${p.x}" cy="${p.y}" r="15" fill="none" stroke="${selected ? '#f4bd5b' : 'transparent'}" stroke-width="3"/><circle cx="${p.x}" cy="${p.y}" r="17" class="focus-ring" fill="none" stroke="#266b73" stroke-width="3"/></g>`;
+  }
   const fill = t.kind === 'hot' ? '#c39a4e' : t.kind === 'neutral' ? '#e0e0d5' : '#44794b';
   return `<g data-terminal="${id}" class="terminal ${selected ? 'selected' : ''}" role="button" tabindex="0" aria-label="${t.label}" aria-pressed="${selected}"><title>${t.label} · ${names[t.kind]} wire</title><circle cx="${p.x}" cy="${p.y}" r="18" fill="transparent"/><circle cx="${p.x}" cy="${p.y}" r="13" fill="${selected ? '#f4bd5b' : '#f4e9cb'}" stroke="${selected ? '#8c591b' : '#82735c'}" stroke-width="${selected ? 3 : 1}"/><circle cx="${p.x}" cy="${p.y}" r="9" fill="${fill}" stroke="#635c4a"/><path d="M${p.x-5},${p.y}h10" stroke="#5d573e" stroke-width="2"/><circle cx="${p.x}" cy="${p.y}" r="15" class="focus-ring" fill="none" stroke="#266b73" stroke-width="3"/></g>`;
 }
@@ -205,6 +223,8 @@ function render() {
     <filter id="label-shadow"><feDropShadow dx="0" dy="2" stdDeviation="1" flood-color="#665236" flood-opacity=".14"/></filter>
     <linearGradient id="panel-metal" x2="1" y2="1"><stop stop-color="#d2d9dc"/><stop offset=".5" stop-color="#a6b1b8"/><stop offset="1" stop-color="#7e8d96"/></linearGradient>
     <linearGradient id="switch-metal"><stop stop-color="#aeb9bc"/><stop offset=".5" stop-color="#e2e8e8"/><stop offset="1" stop-color="#8a979d"/></linearGradient>
+    <linearGradient id="brass-screw" x2="1" y2="1"><stop stop-color="#fff0a7"/><stop offset=".45" stop-color="#d5ad52"/><stop offset="1" stop-color="#93691e"/></linearGradient>
+    <linearGradient id="green-screw" x2="1" y2="1"><stop stop-color="#a3c58a"/><stop offset=".45" stop-color="#528b47"/><stop offset="1" stop-color="#285534"/></linearGradient>
     <linearGradient id="toggle-ivory" x2="0" y2="1"><stop stop-color="#fff9e9"/><stop offset="1" stop-color="#ded2b5"/></linearGradient>
     <radialGradient id="fixture-ceramic"><stop stop-color="#fffef5"/><stop offset="1" stop-color="#e6e0ce"/></radialGradient>
     <radialGradient id="unlit-bulb"><stop stop-color="#fbf9e9"/><stop offset="1" stop-color="#ddd8c4"/></radialGradient>
