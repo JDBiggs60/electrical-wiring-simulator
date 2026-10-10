@@ -1,4 +1,5 @@
 import './style.css';
+import { mountJunctionBox } from './junction-view';
 import { createNMExample, evaluateBoxWiring, type BoxWiring } from './box-wiring';
 import { evaluateCircuit, terminals, type TerminalId, type Wire, type WireColor } from './circuit';
 
@@ -49,7 +50,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="component-item"><span class="part-graphic">${partThumbnail('light')}</span><div><strong>Light fixture</strong><small>Hot / neutral / ground</small></div><span class="part-state">MOUNTED</span></div>
       <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('three-way')}</span><span><strong>Three-way switch</strong><small>Common + 2 travelers</small></span><span class="part-state">FUTURE</span></button>
       <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('outlet')}</span><span><strong>Duplex receptacle</strong><small>Hot / neutral / ground</small></span><span class="part-state">FUTURE</span></button>
-      <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('box')}</span><span><strong>Junction box</strong><small>Splices &amp; pigtails</small></span><span class="part-state">FUTURE</span></button>
+      <button id="open-junction" class="component-item" aria-label="Open junction box prototype"><span class="part-graphic">${partThumbnail('box')}</span><span><strong>Junction box</strong><small>Open &amp; wire it yourself</small></span><span class="part-state">PROTOTYPE</span></button>
       <div class="component-item"><span class="part-graphic">${partThumbnail('nuts')}</span><span><strong>Wire nuts &amp; pigtails</strong><small>Inspect in NM cable example</small></span><span class="part-state">EXAMPLE</span></div>
       </div>
       <div class="connections-heading"><span class="section-label">YOUR CONNECTIONS</span><span id="wire-count">0</span></div>
@@ -329,6 +330,7 @@ function render() {
   <text x="369" y="112" class="board-note">01 / SUPPLY → SWITCH → LOAD</text><text x="369" y="131" class="fine-label">Click terminal screws · mounting screws are not connections</text>
   ${boxWiring ? cableGraphic() : ''}
   ${panelGraphic()}${switchGraphic()}${lightGraphic(result.lightOn)}
+  <g data-action="junction" class="junction-board-box" role="button" tabindex="0" aria-label="Open junction box prototype"><title>Open the interactive junction-box wiring workspace. Prototype connections are saved separately from your Phase 1 exercise.</title><rect x="732" y="73" width="106" height="64" rx="3" fill="url(#panel-metal)" stroke="#627985" stroke-width="2"/><rect x="739" y="80" width="92" height="50" fill="#bac5ca" stroke="#6c7d87"/>${screw(744,85)}${screw(826,125)}<text x="785" y="101" text-anchor="middle" class="tiny-label">JUNCTION BOX</text><text x="785" y="117" text-anchor="middle" class="fine-label">${junction.summary().connectors} CONNECTORS · CLICK TO OPEN</text></g>
   <g id="wires">${(boxWiring ? [] : wires).map(w => {const d = routedWirePath(w);return `<g data-wire="${w.id}" class="wire-connection"><title>${names[w.color]} wire: ${terminals[w.from].label} to ${terminals[w.to].label}. Select to remove.</title><path d="${d}" fill="none" stroke="${selectedWire === w.id ? '#efad35' : '#73664d'}" stroke-opacity="${selectedWire === w.id ? 1 : .8}" stroke-width="${selectedWire === w.id ? 10 : 7}"/><path d="${d}" fill="none" stroke="${colors[w.color]}" stroke-width="5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="transparent" stroke-width="17" class="wire-hit"/></g>`;}).join('')}</g>
   <path id="preview-wire" d="${selectedTerminal && ghost ? wirePath(point(selectedTerminal), ghost) : ''}" fill="none" stroke="${colors[selectedColor]}" stroke-width="4" stroke-dasharray="7 5" pointer-events="none"/>
   ${Object.keys(terminals).map(id => terminalGraphic(id as TerminalId)).join('')}<text x="369" y="608" class="fine-label">WIRE CROSSINGS ARE NOT JOINTS · CONNECTIONS OCCUR AT TERMINALS ONLY</text>`;
@@ -444,6 +446,7 @@ board.addEventListener('pointercancel', () => {gesture = null;ghost = null;selec
 board.addEventListener('click', event => {
   const target = event.target as Element;
   if (target.closest('[data-action="switch"]')) toggleSwitch();
+  if (target.closest('[data-action="junction"]')) junction.open();
   const id = target.closest<SVGGElement>('[data-wire]')?.dataset.wire;
   if (id) {selectedWire = Number(id);selectedTerminal = null;ghost = null;render();}
 });
@@ -453,6 +456,7 @@ board.addEventListener('keydown', event => {
   const terminal = target.closest<SVGGElement>('[data-terminal]')?.dataset.terminal as TerminalId | undefined;
   if (terminal) {event.preventDefault();chooseTerminal(terminal);}
   else if (target.closest('[data-action="switch"]')) {event.preventDefault();toggleSwitch();board.querySelector<SVGGElement>('[data-action="switch"]')?.focus();}
+  else if (target.closest('[data-action="junction"]')) {event.preventDefault();junction.open();}
 });
 document.querySelectorAll<HTMLButtonElement>('[data-color]').forEach(button => button.addEventListener('click', () => {selectedColor = button.dataset.color as WireColor;selectedWire = null;render();}));
 document.querySelector('#wire-list')!.addEventListener('click', event => {const id = (event.target as Element).closest<HTMLButtonElement>('[data-remove]')?.dataset.remove;if (id) removeWire(Number(id));});
@@ -502,7 +506,10 @@ document.querySelector('#reset')!.addEventListener('click', () => {
   report('A fresh start.', ['Power is off and all wires are cleared. Start with the black hot path from Breaker 1.']);
 });
 document.addEventListener('keydown', event => {
+  if (document.querySelector('.junction-dialog[open]')) return;
   if (event.key === 'Escape') {selectedTerminal = null;selectedWire = null;ghost = null;render();}
   if ((event.key === 'Delete' || event.key === 'Backspace') && selectedWire !== null && !(event.target instanceof HTMLInputElement)) {event.preventDefault();removeWire(selectedWire);}
 });
+const junction = mountJunctionBox(() => render());
+document.querySelector('#open-junction')!.addEventListener('click', () => junction.open());
 render();

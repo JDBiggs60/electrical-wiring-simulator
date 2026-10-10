@@ -6,7 +6,7 @@ export interface Conductor {
   bare?: boolean; connected: boolean;
 }
 export interface NMCable { id: string; label: string; fromBox: string; toBox: string; conductors: Conductor[] }
-export interface Splice { id: string; box: 'switch' | 'light'; label: string; members: string[]; connected: boolean }
+export interface Splice { id: string; box: 'switch' | 'light' | 'junction'; label: string; members: string[]; connected: boolean }
 export interface BoxWiring { cables: NMCable[]; leads: Conductor[]; splices: Splice[]; boxBonds: string[] }
 const lead = (id: string, from: string, to: string, kind: WireColor, label: string, bare = false): Conductor => ({ id, from, to, kind, label, bare, connected: true });
 
@@ -80,7 +80,7 @@ export function analyzeBoxWiring(layout: BoxWiring): { wires: Wire[]; errors: st
     const first = deviceEnds[0];
     if (first) for (const to of deviceEnds.slice(1)) wires.push({ id: wires.length + 1, from: first, to, color: terminals[first].kind });
   }
-  for (const box of layout.boxBonds) if (!bonded.has(box)) errors.push(`Bond the ${box === 'switch.box' ? 'switch' : 'fixture'} metal box to equipment ground through its grounding pigtail.`);
+  for (const box of layout.boxBonds) if (!bonded.has(box)) errors.push(`Bond the ${box === 'switch.box' ? 'switch' : box === 'junction.box' ? 'junction' : 'fixture'} metal box to equipment ground through its grounding pigtail.`);
   return { wires, errors: [...new Set(errors)] };
 }
 export function evaluateBoxWiring(layout: BoxWiring, power = false, switchOn = false): CircuitResult {
