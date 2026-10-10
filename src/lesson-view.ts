@@ -1,10 +1,11 @@
+import { createLessonHistory, historyButtons, type LessonHistory } from './lesson-history';
 import { installationAssembly } from './installation-art';
 import { steel, cavity, toggle, holder, knockout, screw, nut, conductor } from './diagram-art';
 import { addLessonPigtail, boxView, checkLessonCircuit, disconnectLessonEnd, endConnection, joinLessonEnds, removeLessonConnector, setLessonPower, terminateLessonEnd, type BoxId, type LessonCircuit, type LessonEnd, type Point } from './lesson-circuit.ts';
 
 /** The selection / connector / removal workflow is shared with the junction prototype.
  * This view receives the overview's state, so reopening a box never resets its wiring. */
-export function mountLessonBox(state: LessonCircuit, onChange: () => void, hardware = false) {
+export function mountLessonBox(state: LessonCircuit, onChange: () => void, hardware = false, history: LessonHistory = createLessonHistory(state)) {
   const dialog = document.createElement('dialog');
   dialog.id = 'diagram-closeup'; dialog.setAttribute('aria-labelledby', 'diagram-closeup-title');
   document.body.append(dialog);
@@ -70,7 +71,7 @@ export function mountLessonBox(state: LessonCircuit, onChange: () => void, hardw
     const view = boxView(state, box), result = checkLessonCircuit(state);
     dialog.innerHTML = `<header><div><span>PHASE 2B · CONNECT CONDUCTOR ENDS</span><h2 id="diagram-closeup-title">${box === 'switch' ? 'Inside the single-gang switch box' : 'Inside the ceiling fixture box'}</h2></div><button id="diagram-close" data-action="close">Return to circuit</button></header>
       <div class="d-box-workspace"><section class="d-box-art"><div id="diagram-closeup-art">${artwork()}</div><p class="d-box-help">${box === 'switch' ? 'Supply enters from the left. The fixture cable exits at the top. Use separate neutral and ground connectors; bond the device and steel box with their pigtails.' : 'The cable enters from the left. Join black, white, and ground to the matching fixture leads. Attach each lead’s terminal end and the separate box bond.'}</p></section>
-      <aside class="d-box-tools">${hardware ? `<h3>Parts tray · grounding pigtails</h3><div class="d-pigtail-tray">${(box === 'switch' ? ['switch.device-ground','switch.box-ground'] : ['fixture.ground','fixture.box-ground']).map(id => `<button data-add-pigtail="${id}" ${state.power || state.leads.some(l => l.id === id) ? 'disabled' : ''}>Add ${id === 'switch.device-ground' ? 'device ground pigtail' : id === 'fixture.ground' ? 'fixture ground pigtail' : 'steel box bond pigtail'}</button>`).join('')}</div><p>Blue rings are selectable loose ends. Select one end, then click an electrical screw. Mounting screws cannot be wired.</p>` : ''}<h3>1. Select conductor ends</h3><div class="d-end-picker">${view.ends.map(e => `<button data-pick="${e.id}" aria-pressed="${selected.has(e.id)}" class="${selected.has(e.id) ? 'picked' : ''}"><i style="background:${color(e)}"></i>${e.label}<small>${endConnection(state, e.id) ? 'connected' : 'loose'}</small></button>`).join('')}</div>
+      <aside class="d-box-tools"><div class="d-history-tools">${historyButtons(history,'data-action')}<small>Ctrl+Z · Ctrl+Y / Ctrl+Shift+Z</small></div>${groundingGuide()}${hardware ? `<h3>Parts tray · grounding pigtails</h3><div class="d-pigtail-tray">${(box === 'switch' ? ['switch.device-ground','switch.box-ground'] : ['fixture.ground','fixture.box-ground']).map(id => `<button data-add-pigtail="${id}" ${state.power || state.leads.some(l => l.id === id) ? 'disabled' : ''}>Add ${id === 'switch.device-ground' ? 'device ground pigtail' : id === 'fixture.ground' ? 'fixture ground pigtail' : 'steel box bond pigtail'}</button>`).join('')}</div><p>Blue rings are selectable loose ends. Select one end, then click an electrical screw. Mounting screws cannot be wired.</p>` : ''}<h3>1. Select conductor ends</h3><div class="d-end-picker">${view.ends.map(e => `<button data-pick="${e.id}" aria-pressed="${selected.has(e.id)}" class="${selected.has(e.id) ? 'picked' : ''}"><i style="background:${color(e)}"></i>${e.label}<small>${endConnection(state, e.id) ? 'connected' : 'loose'}</small></button>`).join('')}</div>
       <p class="d-selection" role="status">${selected.size ? 'Selected: ' + [...selected].map(id => state.ends.find(e => e.id === id)!.label).join(' + ') : 'No ends selected'}</p>
       <div class="d-box-actions"><button data-action="join" ${state.power ? 'disabled' : ''}>Join with connector</button><button data-action="clear">Clear selection</button><button data-action="disconnect" ${state.power ? 'disabled' : ''}>Disconnect selected ends</button></div>
       <h3>2. Attach one selected end</h3><div class="d-terminal-picker">${view.terminals.map(t => `<button data-terminal="${t.id}" ${state.power ? 'disabled' : ''}>Connect to ${t.label}<small>${Object.values(state.terminations).includes(t.id) ? 'occupied' : 'empty'}</small></button>`).join('')}</div>
@@ -79,6 +80,16 @@ export function mountLessonBox(state: LessonCircuit, onChange: () => void, hardw
       <div class="d-box-feedback" aria-live="polite"><p>${message}</p><strong>Test power ${state.power ? 'ON' : 'OFF'} · Light ${result.lightOn ? 'ON' : 'OFF'}</strong>${checked ? `<p>${result.valid ? 'Circuit correctly wired.' : 'Check connections in both boxes.'}</p>${result.errors.length ? `<ul>${result.errors.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}<div class="d-continuity">${Object.entries(result.continuity).map(([kind, continuous]) => `<span>${kind}: ${continuous ? 'continuous' : 'open'}</span>`).join('')}</div>` : ''}</div></aside></div>
       <p class="diagram-closeup-note">Both boxes and the main diagram share one circuit. All ends start disconnected; only terminal attachments and connector membership make electrical connections. Silver mounting screws are mechanical hardware.</p>`;
     if (key && focusValue) dialog.querySelector<HTMLElement>(`[${key}="${focusValue}"]`)?.focus();
+  }
+  function groundingGuide(): string {
+    if (!hardware) return '';
+    const device = box === 'switch' ? 'switch.device-ground' : 'fixture.ground';
+    const bond = box === 'switch' ? 'switch.box-ground' : 'fixture.box-ground';
+    const missing = [device,bond].filter(id => !state.leads.some(l => l.id === id));
+    const members = box === 'switch' ? ['feed.ground.switch','load.ground.switch',device+'.splice',bond+'.splice'] : ['load.ground.fixture',device+'.splice',bond+'.splice'];
+    const complete = state.connectors.some(c => c.box === box && c.members.length === members.length && members.every(id => c.members.includes(id)));
+    const c = checkLessonCircuit(state).continuity;
+    return `<section class="d-ground-guide"><h3>Grounding · do these steps yourself</h3><ol><li>Select ${box === 'switch' ? 'Supply · bare ground and To fixture · bare ground' : 'From switch · bare ground'}.</li><li>Add the ${box === 'switch' ? 'device' : 'fixture'} ground pigtail and the separate steel box bond pigtail from the parts tray. Your selected ends stay selected.</li><li>Select the <b>splice end</b> of each pigtail, then Join with connector. This virtual connector accepts ${members.length} ends.</li><li>Select the ${box === 'switch' ? 'device' : 'fixture'} pigtail’s <b>terminal end</b> and attach it to the ${box === 'switch' ? 'switch yoke' : 'fixture strap'} green screw.</li><li>Select the box pigtail’s <b>terminal end</b> and attach it to the steel box bonding screw.</li></ol>${missing.length ? `<p>${missing.map(id => id === bond ? 'Steel box bond pigtail' : box === 'switch' ? 'Device ground pigtail' : 'Fixture ground pigtail').join(' and ')} not yet created. Add it from the tray before selecting its ends; adding a pigtail makes no connections.</p>` : ''}<div class="d-ground-indicators" aria-live="polite">${[[complete,'Ground splice complete','Ground splice incomplete'],[c[box === 'switch' ? 'switchGround' : 'fixtureGround'],box === 'switch' ? 'Switch grounded' : 'Fixture grounded',box === 'switch' ? 'Switch not grounded' : 'Fixture not grounded'],[c[box === 'switch' ? 'switchBox' : 'fixtureBox'],'Steel box bonded','Steel box not bonded']].map(([ok,yes,no]) => `<span data-ground-status="${ok ? 'complete' : 'incomplete'}">${ok ? '● '+yes : '○ '+no}</span>`).join('')}</div></section>`;
   }
   function activate(target: Element) {
     const pigtail = target.closest('[data-add-pigtail]')?.getAttribute('data-add-pigtail');
@@ -93,7 +104,7 @@ export function mountLessonBox(state: LessonCircuit, onChange: () => void, hardw
     }
     const terminal = target.closest('[data-terminal]')?.getAttribute('data-terminal');
     if (terminal) {
-      const error = selected.size === 1 ? terminateLessonEnd(state, [...selected][0]!, terminal) : 'Select exactly one conductor end, then its terminal.';
+      const error = selected.size === 1 ? terminateLessonEnd(state, [...selected][0]!, terminal) : (hardware && (terminal === 'switch.ground' || terminal === 'switch.box' || terminal === 'light.ground' || terminal === 'light.box') ? 'Select one pigtail terminal end first. If its pigtail has not been created, add it from the parts tray. The splice end joins the bare grounds; the terminal end goes on the green screw.' : 'Select exactly one conductor end, then its terminal.');
       message = error ?? 'Conductor attached to ' + state.terminals.find(t => t.id === terminal)!.label + '.';
       if (!error) { selected.clear(); checked = false; onChange(); }
       render(); return;
@@ -106,9 +117,10 @@ export function mountLessonBox(state: LessonCircuit, onChange: () => void, hardw
       render(); return;
     }
     const action = target.closest('[data-action]')?.getAttribute('data-action');
+    if (action === 'undo' || action === 'redo') { message = history[action](); selected.clear(); checked = false; onChange(); render(); return; }
     if (action === 'close') { dialog.close(); return; }
     if (action === 'clear') selected.clear();
-    if (action === 'join') { const error = joinLessonEnds(state, box, [...selected]); message = error ?? 'Connector installed. Its members now share continuity.'; if (!error) { selected.clear(); checked = false; onChange(); } }
+    if (action === 'join') { const groundOnly = [...selected].every(id => state.ends.find(e => e.id === id)?.kind === 'ground'); const missingGround = hardware && groundOnly && selected.size > 0 && (box === 'switch' ? ['switch.device-ground','switch.box-ground'] : ['fixture.ground','fixture.box-ground']).some(id => !state.leads.some(l => l.id === id)); const error = missingGround ? 'Create both grounding pigtails in the parts tray first, then select their splice ends with the bare ground conductors. The device and steel box each need their own bond.' : joinLessonEnds(state, box, [...selected]); message = error ?? 'Connector installed. Its members now share continuity.'; if (!error) { selected.clear(); checked = false; onChange(); } }
     if (action === 'disconnect') {
       if (!selected.size) message = 'Select the connected ends to disconnect.';
       else { const errors = [...selected].map(id => disconnectLessonEnd(state, id)).filter(Boolean); message = errors[0] ?? 'Selected terminations disconnected; selected connectors removed.'; if (!errors.length) { selected.clear(); checked = false; onChange(); } }
@@ -118,8 +130,14 @@ export function mountLessonBox(state: LessonCircuit, onChange: () => void, hardw
     if (action === 'switch') { state.switchOn = !state.switchOn; onChange(); }
     if (action) render();
   }
-  dialog.addEventListener('click', e => activate(e.target as Element));
-  dialog.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && (e.target as Element).matches('g[role="button"]')) { e.preventDefault(); activate(e.target as Element); } });
+  function dispatch(target: Element) {
+    const action = target.closest('[data-action]')?.getAttribute('data-action');
+    if (action === 'undo' || action === 'redo') activate(target);
+    else if (history.perform(() => activate(target))) onChange();
+    if (dialog.open) render();
+  }
+  dialog.addEventListener('click', e => dispatch(e.target as Element));
+  dialog.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && (e.target as Element).matches('g[role="button"]')) { e.preventDefault(); dispatch(e.target as Element); } });
   dialog.addEventListener('close', () => { document.body.classList.remove('d-dialog-open'); onChange(); });
-  return { open(id: BoxId) { box = id; selected.clear(); checked = false; message = 'All changes here update the same circuit shown in the main diagram.'; render(); dialog.showModal(); document.body.classList.add('d-dialog-open'); dialog.querySelector<HTMLButtonElement>('#diagram-close')!.focus(); } };
+  return { historyChanged(note = '') { selected.clear(); checked = false; message = note || 'Wiring history updated across both boxes.'; if (dialog.open) render(); }, open(id: BoxId) { box = id; selected.clear(); checked = false; message = 'All changes here update the same circuit shown in the main diagram.'; render(); dialog.showModal(); document.body.classList.add('d-dialog-open'); dialog.querySelector<HTMLButtonElement>('#diagram-close')!.focus(); } };
 }

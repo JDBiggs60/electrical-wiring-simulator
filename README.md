@@ -19,6 +19,12 @@ Test the complete lesson:
 
 Interaction uses selection and attachment rather than freehand dragging. State lasts for the current page session. Tests cover parts-tray identity, electrical faults and continuity, artwork consistency, actual SVG end/screw keyboard selection, connectors, bonds, reset, power, switch, lamp and mobile containment. Publication remains isolated to `/preview/`, with production artifacts preserved by the existing deployment checks; no merge to main is authorized.
 
+## Undo, redo and guided grounding
+
+Undo and Redo are beside the box connection controls and in the main installation controls. Ctrl+Z undoes; Ctrl+Y or Ctrl+Shift+Z redoes. One shared history follows you between boxes. Each successful wiring operation records one action, including terminal attachments, connector creation/removal, disconnecting selected ends and adding a pigtail. Selection, checks, invalid attempts and switch/power operation do not create history entries. New wiring after undo clears redo. Reset clears both history stacks; refreshing starts a new session. Turn test power off to use wiring history.
+
+The grounding guide lists the bare cable conductors, explains the difference between each pigtail's splice end and terminal end, and identifies missing pigtails. Add both pigtails manually, select their splice ends along with the cable grounds, then join them. The virtual connector accepts two to four ends; the switch ground splice uses four and the fixture ground splice uses three. Complete the device and box bonds separately. The splice indicator checks actual connector membership; device and box indicators check continuity back to supply ground. No grounding connection is automatic.
+
 ## Run locally
 
 Requires Node.js 24 or newer and npm. No backend, database, account, API key, or external font service is needed.
