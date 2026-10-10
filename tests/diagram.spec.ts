@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('the primary lesson preserves the complete circuit layout and starts unwired', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto('/');
+  await page.goto('/?view=lesson');
   await expect(page.getByRole('heading', { name: 'Residential lighting circuit', exact: true })).toBeVisible();
   await expect(page.locator('.diagram-review-note')).toContainText('Start unwired');
   await expect(page.locator('#diagram-board')).toBeVisible();
@@ -27,7 +27,7 @@ test('the primary lesson preserves the complete circuit layout and starts unwire
 });
 
 test('the working Phase 1 trainer and junction prototype remain accessible', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=lesson');
   const popup = page.waitForEvent('popup');
   await page.getByRole('link', { name: 'Open working Phase 1 trainer' }).click();
   const trainer = await popup;
@@ -40,7 +40,7 @@ test('the working Phase 1 trainer and junction prototype remain accessible', asy
 
 test('box review is keyboard accessible and mobile overflow is contained in the diagram canvas', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/?view=lesson');
   await page.locator('[data-open-diagram-box="switch"]').focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog')).toBeVisible();

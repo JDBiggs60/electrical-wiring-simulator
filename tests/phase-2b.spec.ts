@@ -30,7 +30,7 @@ async function wireFixture(page: Page) {
 }
 
 test('selectable cables identify conductors and preserve corresponding ports in both box views', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=lesson');
   await page.locator('[data-cable="load"]').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('.d-cable-inspector')).toContainText('load.hot');
@@ -57,7 +57,7 @@ test('selectable cables identify conductors and preserve corresponding ports in 
 
 test('student wiring across both boxes drives continuity, switch and light; edits persist and reset clears both', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto('/');
+  await page.goto('/?view=lesson');
   await page.locator('[data-lesson-action="power"]').click();
   await expect(page.locator('#lesson-light')).toContainText('Test power OFF · Light OFF');
   await expect(page.locator('.d-circuit-feedback')).toContainText('Correct the wiring first');
@@ -101,7 +101,7 @@ test('student wiring across both boxes drives continuity, switch and light; edit
 });
 
 test('wrong connector membership reports faults and removal frees the selected ends', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=lesson');
   await page.getByRole('button', { name: 'Open switch box', exact: true }).click();
   await join(page, ['feed.hot.switch', 'load.neutral.switch']);
   await page.locator('[data-action="check"]').click();
@@ -119,7 +119,7 @@ test('wrong connector membership reports faults and removal frees the selected e
 
 test('mobile wiring controls are usable and close-up does not overflow the page', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/?view=lesson');
   await page.getByRole('button', { name: 'Open switch box', exact: true }).click();
   await attach(page, 'feed.hot.switch', 'switch.a');
   await expect(page.locator('[data-pick="feed.hot.switch"]')).toContainText('connected');

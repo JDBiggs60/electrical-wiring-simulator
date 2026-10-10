@@ -1,0 +1,62 @@
+body.hardware-page { margin:0; color:#333c37; background:#eeefeb; font-family:'Segoe UI',system-ui,sans-serif; }
+.hardware-sheet { max-width:1860px; margin:auto; padding:22px 26px 12px; }
+.hardware-header { display:flex; align-items:center; justify-content:space-between; gap:24px; margin-bottom:18px; }
+.hardware-header p { font:700 10px ui-monospace,monospace; letter-spacing:1px; margin:0 0 7px; color:#656f66; }
+.hardware-header h1 { font-size:25px; font-weight:650; letter-spacing:-.4px; margin:0; }
+.hardware-header a { color:#4d6250; font-size:12px; text-decoration:none; border-bottom:1px solid #8b9a87; padding:5px 0; }
+.hardware-review { display:flex; align-items:center; flex-wrap:wrap; gap:8px 17px; padding:11px 14px; margin-bottom:15px; background:#e3e7de; border-left:3px solid #7d8d72; font-size:12px; line-height:1.5; }
+.hardware-drawing { background:#fcfcf6; border:1px solid #b8c0b2; }
+.hardware-drawing-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 13px; border-bottom:1px solid #d6dbcf; }
+.hardware-drawing-heading > span { font:700 10px ui-monospace,monospace; letter-spacing:.5px; color:#747e6a; }
+.hardware-drawing-heading > div { display:flex; gap:8px; }
+.hardware-page button { padding:8px 11px; background:#fcfcf6; border:1px solid #a7b29d; color:#43513c; border-radius:2px; font:600 12px 'Segoe UI',system-ui,sans-serif; cursor:pointer; }
+.hardware-page button:hover { background:#e8eddf; }
+.hardware-page button:focus-visible,.hardware-header a:focus-visible { outline:3px solid #9c8036; outline-offset:3px; }
+.hardware-board { padding:0 16px; overflow-x:auto; }
+.hardware-board svg { display:block; width:100%; height:auto; }
+.hardware-board text,.hardware-detail-svg text { font-family:'Segoe UI',system-ui,sans-serif; pointer-events:none; fill:#3f4b3a; }
+.hw-board-title { font-size:20px; font-weight:700; letter-spacing:.5px; }
+.hw-board-note { font-size:17px; fill:#6a7462 !important; }
+.hw-cable-print { font:700 16px ui-monospace,monospace !important; fill:#686c54 !important; }
+.hw-open-label { font-size:16px; font-weight:650; fill:#60754f !important; }
+.hw-device-stamp { font-size:8px; font-weight:650; fill:#777964 !important; }
+.hw-callout text { font-size:15px; font-weight:600; }
+.hw-part-title { font-size:15px; font-weight:700; letter-spacing:.7px; }
+.hw-small-note { font-size:14px; fill:#67775c !important; }
+.hw-inspect { outline:none; cursor:pointer; }
+.hw-inspect:hover rect,.hw-inspect:focus-visible rect { stroke:#91a17e; stroke-width:2; stroke-dasharray:7 6; }
+.hardware-footer { display:flex; justify-content:space-between; gap:30px; font-size:11px; line-height:1.6; color:#6c7763; }
+.hardware-footer p:first-child { max-width:850px; }
+.hardware-footer p:last-child { text-align:right; }
+#hardware-detail { width:min(1380px,95vw); max-width:95vw; height:auto; max-height:94dvh; padding:0; border:1px solid #96a18c; border-radius:2px; background:#fcfcf6; color:#36432e; overflow:auto; }
+#hardware-detail::backdrop { background:#263321a8; }
+#hardware-detail > header { display:flex; justify-content:space-between; align-items:center; gap:15px; padding:14px 20px; border-bottom:1px solid #cdd5c2; background:#eff2e8; }
+#hardware-detail header p { font:700 10px ui-monospace,monospace; color:#727f65; margin:0; }
+#hardware-detail h2 { margin:7px 0 0; font-size:22px; font-weight:650; }
+#hardware-detail-close { flex-shrink:0; }
+#hardware-detail-art { padding:12px 18px 0; overflow-x:auto; }
+.hardware-detail-svg { display:block; width:100%; height:auto; max-height:calc(94dvh - 170px); min-height:340px; }
+.hardware-detail-note { padding:13px 22px; margin:0; border-top:1px solid #d4dccb; background:#f2f5ec; font-size:12px; line-height:1.7; }
+.hardware-detail-open { overflow:hidden; }
+.hardware-scroll-hint { display:none; }
+.hardware-board:focus-visible,#hardware-detail-art:focus-visible { outline:2px solid #9c8036; outline-offset:-2px; }
+@media(max-width:760px) {
+  .hardware-sheet { padding:15px 10px; }
+  .hardware-header { flex-wrap:wrap; gap:13px; }
+  .hardware-header h1 { font-size:22px; }
+  .hardware-header a { font-size:11px; }
+  .hardware-drawing-heading { flex-wrap:wrap; padding:10px 9px; }
+  .hardware-drawing-heading > div { flex-wrap:wrap; }
+  .hardware-board { padding:0 6px; }
+  .hardware-board svg { min-width:1050px; }
+  .hardware-footer { display:block; }
+  .hardware-footer p:last-child { text-align:left; }
+  #hardware-detail > header { padding:13px; align-items:start; }
+  #hardware-detail h2 { font-size:17px; }
+  #hardware-detail header p { font-size:8px; }
+  #hardware-detail-close { padding:8px; font-size:10px; max-width:100px; }
+  #hardware-detail-art { padding:10px 8px; }
+  .hardware-detail-svg { min-width:850px; min-height:0; max-height:none; }
+  .hardware-detail-note { padding:12px 14px; }
+  .hardware-scroll-hint { display:block; margin:0; padding:8px 12px; font-size:11px; color:#65745c; }
+}
