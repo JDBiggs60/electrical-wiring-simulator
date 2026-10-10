@@ -1,5 +1,6 @@
 import { evaluateBoxWiring, type BoxWiring } from './box-wiring.ts';
 import type { WireColor } from './circuit.ts';
+import { connectorSelection } from './connectors.ts';
 
 export const junctionEnds = {
   'a.hot': { label: 'Cable A · black', kind: 'hot' },
@@ -15,10 +16,10 @@ export interface JunctionConnector { id: number; members: EndId[] }
 export interface JunctionState { connectors: JunctionConnector[]; pigtail: boolean; boxAttached: boolean; nextId: number }
 export function createJunction(): JunctionState { return { connectors: [], pigtail: false, boxAttached: false, nextId: 1 }; }
 export function joinEnds(state: JunctionState, members: EndId[]): string | null {
-  const unique = [...new Set(members)];
-  if (unique.length < 2 || unique.length > 4) return 'Select two to four free conductor ends for this virtual connector.';
-  if (unique.some(id => !Object.hasOwn(junctionEnds, id) || (id === 'pigtail.end' && !state.pigtail))) return 'That conductor is not present in this box.';
-  if (unique.some(id => state.connectors.some(c => c.members.includes(id)))) return 'Remove the existing connector before changing its conductor ends.';
+  const { members: unique, error } = connectorSelection(members,
+    id => Object.hasOwn(junctionEnds, id) && (id !== 'pigtail.end' || state.pigtail),
+    id => state.connectors.some(c => c.members.includes(id)));
+  if (error) return error;
   state.connectors.push({ id: state.nextId++, members: unique });
   return null;
 }

@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
-test('the primary preview is a complete diagram layout, with both box views and no live wiring controls', async ({ page }) => {
+test('the primary lesson preserves the complete circuit layout and starts unwired', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Residential lighting circuit', exact: true })).toBeVisible();
-  await expect(page.locator('.diagram-review-note')).toContainText('after layout approval');
+  await expect(page.locator('.diagram-review-note')).toContainText('Start unwired');
   await expect(page.locator('#diagram-board')).toBeVisible();
   await expect(page.locator('#board')).toHaveCount(0);
   await expect(page.locator('.diagram-cable')).toHaveCount(2);
@@ -13,8 +13,10 @@ test('the primary preview is a complete diagram layout, with both box views and 
   await page.locator('[data-open-diagram-box="switch"]').click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.locator('#diagram-closeup-title')).toHaveText('Inside the single-gang switch box');
-  await expect(page.locator('#diagram-closeup-art .diagram-device-terminal')).toHaveCount(4); // Two brass, device ground and separate box bond.
-  await expect(page.locator('.diagram-closeup-note')).toContainText('not editable or simulated yet');
+  await expect(page.locator('#diagram-closeup-art [data-terminal]')).toHaveCount(4); // Two brass, device ground and separate box bond.
+  await expect(page.locator('.diagram-closeup-note')).toContainText('All ends start disconnected');
+  await expect(page.locator('.d-terminal-picker')).toContainText('empty');
+  await expect(page.locator('.d-connector-list')).toContainText('No connectors installed');
   await page.getByRole('button', { name: 'Return to circuit' }).click();
   await page.locator('[data-open-diagram-box="fixture"]').click();
   await expect(page.locator('#diagram-closeup-title')).toHaveText('Inside the ceiling fixture box');
