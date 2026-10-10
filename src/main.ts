@@ -256,11 +256,14 @@ function boxDiagram(box: 'switch' | 'light', layout: BoxWiring): string {
     splice.members.forEach((member,i) => {p[member] = {x:center.x-6+i*12,y:center.y+5};});
   }
   const stroke = (kind: WireColor, bare = false) => bare ? '#c68a54' : colors[kind];
-  const line = (a: Point,b: Point,kind: WireColor, bare = false, connected = true) => `<path d="M${a.x} ${a.y} C${a.x} ${a.y+32} ${b.x-24} ${b.y} ${b.x} ${b.y}" fill="none" stroke="#151e23" stroke-width="7" opacity=".45"/><path d="M${a.x} ${a.y} C${a.x} ${a.y+32} ${b.x-24} ${b.y} ${b.x} ${b.y}" fill="none" stroke="${stroke(kind,bare)}" stroke-width="4" ${connected ? '' : 'stroke-dasharray="5 7" opacity=".4"'}/>`;
+  const line = (a: Point,b: Point,kind: WireColor, bare = false, connected = true, route?: string) => {
+    const d = route ?? `M${a.x} ${a.y} C${a.x} ${a.y+32} ${b.x-24} ${b.y} ${b.x} ${b.y}`;
+    return `<path d="${d}" fill="none" stroke="#151e23" stroke-width="7" opacity=".45"/><path d="${d}" fill="none" stroke="${stroke(kind,bare)}" stroke-width="4" ${connected ? '' : 'stroke-dasharray="5 7" opacity=".4"'}/>`;
+  };
   const feeds = box === 'switch' ? [{id:'feed.out',x:100},{id:'load.in',x:298}] : [{id:'load.out',x:94}];
   const shell = box === 'switch' ? '<rect x="35" y="55" width="360" height="325" rx="8"/>' : '<path d="M70 55h218l47 47v224l-47 54H70l-40-54V102Z"/>';
   const wiresInside = feeds.map(feed => `<rect x="${feed.x-18}" y="20" width="36" height="65" rx="4" fill="#ede4cd" stroke="#a99d81"/><rect x="${feed.x-27}" y="53" width="54" height="16" rx="3" fill="#aab5bb" stroke="#61727c"/><text x="${feed.x}" y="14" text-anchor="middle" class="inspection-label">${feed.id === 'feed.out' ? 'FROM PANEL' : feed.id === 'load.in' ? 'TO FIXTURE' : 'FROM SWITCH'}</text>${(['hot','neutral','ground'] as WireColor[]).map((kind,i) => line({x:feed.x-12+i*12,y:85},{x:feed.x-12+i*12,y:110},kind,kind==='ground')).join('')}`).join('');
-  const leads = layout.leads.filter(c => p[c.from] && p[c.to]).map(c => `<g><title>${c.label}${c.connected ? '' : ' · disconnected'}</title>${line(p[c.from]!,p[c.to]!,c.kind,c.bare,c.connected)}</g>`).join('');
+  const leads = layout.leads.filter(c => p[c.from] && p[c.to]).map(c => `<g><title>${c.label}${c.connected ? '' : ' · disconnected'}</title>${line(p[c.from]!,p[c.to]!,c.kind,c.bare,c.connected,c.id === 'switch-load' ? 'M174 245 H157 V228 C157 204 260 160 286 110' : undefined)}</g>`).join('');
   const spliceWires = layout.splices.filter(s => s.box === box).map(s => s.members.map(member => {
     // The cable end and splice end are two drawing locations for the same conductor end.
     const original = feeds.find(f => member.startsWith(f.id));
@@ -268,7 +271,14 @@ function boxDiagram(box: 'switch' | 'light', layout: BoxWiring): string {
     const kind = member.split('.').at(-1) as WireColor;
     const i = ['hot','neutral','ground'].indexOf(kind);
     const enabled = layout.cables.flatMap(c => c.conductors).find(c => c.from === member || c.to === member)?.connected ?? true;
-    return line({x:original.x-12+i*12,y:110},p[member]!,kind,kind==='ground',enabled);
+    const end = p[member]!;
+    // Keep neutral and bare ground away from brass screws in the cutaway.
+    const route = box === 'switch' && member === 'feed.out.ground'
+      ? `M112 110 C112 130 65 124 65 145 V338 Q65 360 90 360 H260 Q${end.x} 360 ${end.x} ${end.y}`
+      : box === 'switch' && member === 'load.in.neutral'
+      ? `M298 110 C298 134 340 125 340 150 V360 Q340 374 320 374 H125 Q${end.x} 374 ${end.x} 350 V${end.y}`
+      : undefined;
+    return line({x:original.x-12+i*12,y:110},end,kind,kind==='ground',enabled,route);
   }).join('')).join('');
   const nuts = layout.splices.filter(s => s.box === box).map(s => {
     const c = splicePoints[s.id]!, y = c.y-(s.connected ? 0 : 24);
