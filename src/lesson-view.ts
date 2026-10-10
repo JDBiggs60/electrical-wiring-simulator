@@ -1,9 +1,10 @@
+import { installationAssembly } from './installation-art';
 import { steel, cavity, toggle, holder, knockout, screw, nut, conductor } from './diagram-art';
-import { boxView, checkLessonCircuit, disconnectLessonEnd, endConnection, joinLessonEnds, removeLessonConnector, setLessonPower, terminateLessonEnd, type BoxId, type LessonCircuit, type LessonEnd, type Point } from './lesson-circuit.ts';
+import { addLessonPigtail, boxView, checkLessonCircuit, disconnectLessonEnd, endConnection, joinLessonEnds, removeLessonConnector, setLessonPower, terminateLessonEnd, type BoxId, type LessonCircuit, type LessonEnd, type Point } from './lesson-circuit.ts';
 
 /** The selection / connector / removal workflow is shared with the junction prototype.
  * This view receives the overview's state, so reopening a box never resets its wiring. */
-export function mountLessonBox(state: LessonCircuit, onChange: () => void) {
+export function mountLessonBox(state: LessonCircuit, onChange: () => void, hardware = false) {
   const dialog = document.createElement('dialog');
   dialog.id = 'diagram-closeup'; dialog.setAttribute('aria-labelledby', 'diagram-closeup-title');
   document.body.append(dialog);
@@ -12,6 +13,7 @@ export function mountLessonBox(state: LessonCircuit, onChange: () => void) {
   let message = '';
   const color = (e: LessonEnd) => e.bare ? '#b87945' : e.kind === 'hot' ? '#24282c' : e.kind === 'neutral' ? '#fffdf4' : '#448852';
   function artwork(): string {
+    if (hardware) return `<svg class="d-closeup-svg hardware-detail-svg" viewBox="0 0 1100 700" role="group" aria-label="Interactive ${box} box wiring workspace">${installationAssembly(state,box,true,selected)}</svg>`;
     const view = boxView(state, box);
     const centers = new Map(view.connectors.map(c => {
       const points = c.members.map(id => state.ends.find(e => e.id === id)!.free);
@@ -68,17 +70,19 @@ export function mountLessonBox(state: LessonCircuit, onChange: () => void) {
     const view = boxView(state, box), result = checkLessonCircuit(state);
     dialog.innerHTML = `<header><div><span>PHASE 2B · CONNECT CONDUCTOR ENDS</span><h2 id="diagram-closeup-title">${box === 'switch' ? 'Inside the single-gang switch box' : 'Inside the ceiling fixture box'}</h2></div><button id="diagram-close" data-action="close">Return to circuit</button></header>
       <div class="d-box-workspace"><section class="d-box-art"><div id="diagram-closeup-art">${artwork()}</div><p class="d-box-help">${box === 'switch' ? 'Supply enters from the left. The fixture cable exits at the top. Use separate neutral and ground connectors; bond the device and steel box with their pigtails.' : 'The cable enters from the left. Join black, white, and ground to the matching fixture leads. Attach each lead’s terminal end and the separate box bond.'}</p></section>
-      <aside class="d-box-tools"><h3>1. Select conductor ends</h3><div class="d-end-picker">${view.ends.map(e => `<button data-pick="${e.id}" aria-pressed="${selected.has(e.id)}" class="${selected.has(e.id) ? 'picked' : ''}"><i style="background:${color(e)}"></i>${e.label}<small>${endConnection(state, e.id) ? 'connected' : 'loose'}</small></button>`).join('')}</div>
+      <aside class="d-box-tools">${hardware ? `<h3>Parts tray · grounding pigtails</h3><div class="d-pigtail-tray">${(box === 'switch' ? ['switch.device-ground','switch.box-ground'] : ['fixture.ground','fixture.box-ground']).map(id => `<button data-add-pigtail="${id}" ${state.power || state.leads.some(l => l.id === id) ? 'disabled' : ''}>Add ${id === 'switch.device-ground' ? 'device ground pigtail' : id === 'fixture.ground' ? 'fixture ground pigtail' : 'steel box bond pigtail'}</button>`).join('')}</div><p>Blue rings are selectable loose ends. Select one end, then click an electrical screw. Mounting screws cannot be wired.</p>` : ''}<h3>1. Select conductor ends</h3><div class="d-end-picker">${view.ends.map(e => `<button data-pick="${e.id}" aria-pressed="${selected.has(e.id)}" class="${selected.has(e.id) ? 'picked' : ''}"><i style="background:${color(e)}"></i>${e.label}<small>${endConnection(state, e.id) ? 'connected' : 'loose'}</small></button>`).join('')}</div>
       <p class="d-selection" role="status">${selected.size ? 'Selected: ' + [...selected].map(id => state.ends.find(e => e.id === id)!.label).join(' + ') : 'No ends selected'}</p>
       <div class="d-box-actions"><button data-action="join" ${state.power ? 'disabled' : ''}>Join with connector</button><button data-action="clear">Clear selection</button><button data-action="disconnect" ${state.power ? 'disabled' : ''}>Disconnect selected ends</button></div>
       <h3>2. Attach one selected end</h3><div class="d-terminal-picker">${view.terminals.map(t => `<button data-terminal="${t.id}" ${state.power ? 'disabled' : ''}>Connect to ${t.label}<small>${Object.values(state.terminations).includes(t.id) ? 'occupied' : 'empty'}</small></button>`).join('')}</div>
-      <h3>Your connectors</h3><div class="d-connector-list">${view.connectors.length ? view.connectors.map(c => `<div><b>Connector ${c.id}</b><span>${c.members.map(id => state.ends.find(e => e.id === id)!.label).join(' + ')}</span><button data-remove-connector="${c.id}" ${state.power ? 'disabled' : ''}>Remove connector ${c.id}</button></div>`).join('') : '<p>No connectors installed.</p>'}</div>
+      <p class="d-bond-status">Steel box bond: ${result.continuity[box === 'switch' ? 'switchBox' : 'fixtureBox'] ? 'complete' : 'incomplete'} · Device ground: ${result.continuity[box === 'switch' ? 'switchGround' : 'fixtureGround'] ? 'complete' : 'incomplete'}</p><h3>Your connectors</h3><div class="d-connector-list">${view.connectors.length ? view.connectors.map(c => `<div><b>Connector ${c.id}</b><span>${c.members.map(id => state.ends.find(e => e.id === id)!.label).join(' + ')}</span><button data-remove-connector="${c.id}" ${state.power ? 'disabled' : ''}>Remove connector ${c.id}</button></div>`).join('') : '<p>No connectors installed.</p>'}</div>
       <div class="d-box-actions"><button data-action="check">Check circuit wiring</button><button data-action="power">Turn test power ${state.power ? 'off' : 'on'}</button><button data-action="switch" aria-pressed="${state.switchOn}">Toggle wall switch · ${state.switchOn ? 'ON' : 'OFF'}</button></div>
       <div class="d-box-feedback" aria-live="polite"><p>${message}</p><strong>Test power ${state.power ? 'ON' : 'OFF'} · Light ${result.lightOn ? 'ON' : 'OFF'}</strong>${checked ? `<p>${result.valid ? 'Circuit correctly wired.' : 'Check connections in both boxes.'}</p>${result.errors.length ? `<ul>${result.errors.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}<div class="d-continuity">${Object.entries(result.continuity).map(([kind, continuous]) => `<span>${kind}: ${continuous ? 'continuous' : 'open'}</span>`).join('')}</div>` : ''}</div></aside></div>
       <p class="diagram-closeup-note">Both boxes and the main diagram share one circuit. All ends start disconnected; only terminal attachments and connector membership make electrical connections. Silver mounting screws are mechanical hardware.</p>`;
     if (key && focusValue) dialog.querySelector<HTMLElement>(`[${key}="${focusValue}"]`)?.focus();
   }
   function activate(target: Element) {
+    const pigtail = target.closest('[data-add-pigtail]')?.getAttribute('data-add-pigtail');
+    if (pigtail) { const error = addLessonPigtail(state,pigtail); message = error ?? 'Pigtail added: both ends loose. Join its splice end to ground, then attach its terminal end to the green screw.'; if (!error) { checked = false; onChange(); } render(); return; }
     const end = target.closest('[data-end],[data-pick]');
     if (end) {
       if (state.power) { message = 'Turn test power off before selecting conductor ends.'; render(); return; }
@@ -90,7 +94,7 @@ export function mountLessonBox(state: LessonCircuit, onChange: () => void) {
     const terminal = target.closest('[data-terminal]')?.getAttribute('data-terminal');
     if (terminal) {
       const error = selected.size === 1 ? terminateLessonEnd(state, [...selected][0]!, terminal) : 'Select exactly one conductor end, then its terminal.';
-      message = error ?? 'Conductor attached to the electrical terminal.';
+      message = error ?? 'Conductor attached to ' + state.terminals.find(t => t.id === terminal)!.label + '.';
       if (!error) { selected.clear(); checked = false; onChange(); }
       render(); return;
     }

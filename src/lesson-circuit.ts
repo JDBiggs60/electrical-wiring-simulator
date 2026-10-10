@@ -152,3 +152,20 @@ export function setLessonPower(state: LessonCircuit, on: boolean): string | null
   if (on && !checkLessonCircuit(state).valid) return 'Test power stays off. Correct the wiring first.';
   state.power = on; return null;
 }
+
+/** In the hardware lesson students take loose ground pigtails from the tray. */
+export function createHardwareCircuit(): LessonCircuit {
+  const state = createLessonCircuit();
+  state.leads = state.leads.filter(l => !l.id.includes('ground'));
+  state.ends = state.ends.filter(e => e.cable || !e.conductor.includes('ground'));
+  return state;
+}
+export function addLessonPigtail(state: LessonCircuit, id: string): string | null {
+  if (state.power) return 'Turn test power off before adding a pigtail.';
+  const template = createLessonCircuit(), lead = template.leads.find(l => l.id === id && l.kind === 'ground');
+  if (!lead) return 'Choose a grounding pigtail from the parts tray.';
+  if (state.leads.some(l => l.id === id)) return 'This pigtail is already installed.';
+  state.leads.push(lead);
+  state.ends.push(...template.ends.filter(e => e.conductor === id));
+  return null;
+}

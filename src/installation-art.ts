@@ -1,4 +1,4 @@
-import { boxView, endConnection, type BoxId, type CablePort, type LessonCircuit, type LessonEnd, type Point } from './lesson-circuit.ts';
+import { checkLessonCircuit, boxView, endConnection, type BoxId, type CablePort, type LessonCircuit, type LessonEnd, type Point } from './lesson-circuit.ts';
 import { liftedLampholder, looseWireNut, nmBoxConnector, nmJacket, pulledToggle, steelDeviceBox, steelOctagonBox } from './hardware-art';
 
 export const assemblySize = { width: 1100, height: 700 };
@@ -17,7 +17,7 @@ const positions: Record<BoxId, Record<string, Point>> = {
     'fixture.box-ground.splice': { x: 233, y: 452 }, 'fixture.box-ground.terminal': { x: 366, y: 467 },
   },
 };
-const terminalPositions: Record<string, Point> = {
+export const terminalPositions: Record<string, Point> = {
   'switch.a': { x: 845.9, y: 263.9 }, 'switch.b': { x: 845.9, y: 408.2 },
   'switch.ground': { x: 718.5, y: 451.1 }, 'switch.box': { x: 218, y: 449 },
   'light.hot': { x: 730.5, y: 216.5 }, 'light.neutral': { x: 858, y: 210.5 },
@@ -49,7 +49,7 @@ function conductorPath(d: string, kind: LessonEnd['kind'], bare: boolean) {
 }
 const stripped = (a: Point, b: Point) => `<path d="M${a.x} ${a.y}L${b.x} ${b.y}" stroke="#ad7644" stroke-width="2.8" stroke-linecap="round"/>`;
 
-export function installationAssembly(state: LessonCircuit, box: BoxId, detail = false) {
+export function installationAssembly(state: LessonCircuit, box: BoxId, detail = false, selected?: Set<string>) {
   const view = boxView(state, box);
   const centers = new Map(view.connectors.map(c => {
     const points = c.members.map(id => positions[box][id]!);
@@ -62,6 +62,10 @@ export function installationAssembly(state: LessonCircuit, box: BoxId, detail = 
     if (connector) { const p = centers.get(connector.id)!; return { x: p.x + connector.members.indexOf(e.id) * 2, y: p.y + 7 }; }
     return positions[box][e.id]!;
   };
+  const targets = selected ? view.ends.map(e => {
+    const p = destination(e), connected = endConnection(state,e.id);
+    return `<g data-end="${e.id}" data-conductor-id="${e.conductor}" role="button" tabindex="0" aria-label="${e.label}" aria-pressed="${selected.has(e.id)}" class="d-end"><circle cx="${p.x}" cy="${p.y}" r="18" fill="transparent"/><circle cx="${p.x}" cy="${p.y}" r="12" fill="none" stroke="${selected.has(e.id) ? '#c38412' : connected ? '#658465' : '#287bb0'}" stroke-width="2"/><title>${e.label}: ${connected ?? 'loose'}</title></g>`;
+  }).join('') + view.terminals.map(t => { const p = terminalPositions[t.id]!; return `<g data-terminal="${t.id}" role="button" tabindex="0" aria-label="Connect to ${t.label}" class="d-terminal"><circle cx="${p.x}" cy="${p.y}" r="17" fill="transparent"/><circle cx="${p.x}" cy="${p.y}" r="12" fill="none" stroke="#287bb0" class="d-terminal-focus"/><title>${t.label}</title></g>`; }).join('') : '';
   const cableWires = view.ends.filter(e => e.cable).map(e => {
     const port = illustrationPort(box, e.port!), top = e.port!.side === 'top';
     const p = top ? { x: port.x + e.offset! * .47, y: port.y + 56 }
@@ -83,8 +87,8 @@ export function installationAssembly(state: LessonCircuit, box: BoxId, detail = 
     const d = top ? `M${p.x} 10V${p.y+56}` : `M10 ${p.y}H${p.x+(box === 'fixture' ? 58 : 46)}`;
     return `<g data-cable-port="${cable.id}" data-box="${box}" data-side="${port.side}" data-port-position="${port.position}">${nmJacket(d,cable.id,17)}${nmBoxConnector(p.x,p.y,top)}${top ? `<ellipse cx="${p.x}" cy="${p.y+56}" rx="8" ry="3" fill="#aba586" stroke="#79765d"/>` : `<ellipse cx="${p.x+(box === 'fixture' ? 58 : 46)}" cy="${p.y}" rx="3" ry="8" fill="#aba586" stroke="#79765d"/>`}</g>`;
   }).join('');
-  const connectors = view.connectors.map(c => { const p = centers.get(c.id)!; return `<g data-connector-id="${c.id}">${looseWireNut(p.x,p.y).replace('shown as a loose part','joining its conductor members')}</g>`; }).join('');
-  const body = box === 'switch' ? `<g transform="translate(90 70)">${steelDeviceBox()}</g><g class="hw-exploded-guide"><path d="M271 137 776 153M272 540 776 510" fill="none" stroke="#b9bdb2" stroke-width="1.2" stroke-dasharray="7 6"/></g><g transform="translate(660 130) scale(1.3)">${pulledToggle()}</g>`
+  const connectors = view.connectors.map(c => { const p = centers.get(c.id)!; return `<g data-connector-id="${c.id}" ${selected ? `data-connector="${c.id}" role="button" tabindex="0" aria-label="Remove connector ${c.id}" class="d-connector"` : ''}>${looseWireNut(p.x,p.y).replace('shown as a loose part','joining its conductor members')}</g>`; }).join('');
+  const body = box === 'switch' ? `<g transform="translate(90 70)">${steelDeviceBox()}</g><g class="hw-exploded-guide"><path d="M271 137 776 153M272 540 776 510" fill="none" stroke="#b9bdb2" stroke-width="1.2" stroke-dasharray="7 6"/></g><g transform="translate(660 130) scale(1.3)">${pulledToggle(state.switchOn)}</g>`
     : `<g transform="translate(75 70)">${steelOctagonBox()}</g><g class="hw-exploded-guide"><path d="M124 270 693 258.5M343 266 889.5 249.5" fill="none" stroke="#b9bdb2" stroke-width="1.2" stroke-dasharray="7 6"/></g><g transform="translate(645 185) scale(1.5)">${liftedLampholder()}</g>`;
   const annotations = !detail ? '' : box === 'switch'
     ? `<text x="90" y="36" class="hw-part-title"><tspan>STEEL SINGLE-GANG</tspan><tspan x="90" dy="21">DEVICE BOX</tspan></text><text x="660" y="74" class="hw-part-title">SINGLE-POLE TOGGLE · PULLED FORWARD</text>
@@ -94,7 +98,7 @@ export function installationAssembly(state: LessonCircuit, box: BoxId, detail = 
       <path d="M879 337 846 408" fill="none" stroke="#80867c" stroke-width="1.2"/>
       ${leader('Green screw on the metal yoke',773,595,'776,581 728,562 719,451')}
       ${leader('Steel-box bonding screw',90,628,'150,608 191,564 218,449')}
-      <text x="435" y="650" class="hw-small-note">Grounding pigtails · both ends loose</text>
+      <text x="435" y="650" class="hw-small-note">Grounding pigtails · add from the parts tray</text>
       <g data-uninstalled="true">${looseWireNut(988,620,-25)}<text x="925" y="674" class="hw-small-note">Loose wire connector</text></g>`
     : `<text x="75" y="36" class="hw-part-title">OCTAGONAL STEEL CEILING BOX</text><text x="645" y="133" class="hw-part-title">PORCELAIN KEYLESS HOLDER · LIFTED AWAY</text>
       ${leader('NM jacket ends inside the box',24,176,'31,183 104,207 159,244')}
@@ -102,9 +106,9 @@ export function installationAssembly(state: LessonCircuit, box: BoxId, detail = 
       <path d="M765 103 858 210" fill="none" stroke="#80867c" stroke-width="1.2"/>
       ${leader('Green ground on the steel strap',491,155,'534,163 584,193 651,226')}
       ${leader('Separate steel-box bond',75,591,'112,576 154,502 191,346')}
-      <text x="390" y="593" class="hw-small-note">Loose fixture leads & bonding pigtail</text>
+      <text x="390" y="593" class="hw-small-note">Fixture leads & separate bonding pigtails</text>
       <g data-uninstalled="true">${looseWireNut(992,615,-25)}<text x="925" y="672" class="hw-small-note">Loose wire connector</text></g>`;
-  return `<g data-installation-box="${box}">${body}${ports}${cableWires}${leads}${connectors}${annotations}</g>`;
+  return `<g class="${box === 'fixture' && checkLessonCircuit(state).lightOn ? 'hw-lamp-on' : ''} ${box === 'switch' && state.switchOn ? 'hw-switch-on' : ''}" data-installation-box="${box}">${body}${ports}${cableWires}${leads}${connectors}${annotations}${targets}</g>`;
 }
 
 export function completeInstallation(state: LessonCircuit) {
@@ -112,7 +116,7 @@ export function completeInstallation(state: LessonCircuit) {
   const routeY = incoming.y, bend = 34;
   const cable = `M${outgoing.x} ${outgoing.y}V${routeY+bend}Q${outgoing.x} ${routeY} ${outgoing.x+bend} ${routeY}H${incoming.x+39}`;
   return `<svg id="hardware-installation" viewBox="0 0 1780 960" role="group" aria-label="Exploded residential installation: supply, steel switch box with pulled-forward single-pole toggle, NM cable and octagonal ceiling box with lifted light holder">
-    ${nmJacket(`M35 ${feed.y}H${feed.x+37}`,'feed',13.6)}${nmJacket(cable,'load',11.4)}
+    <g data-cable="feed" tabindex="0" role="button" aria-label="Select supply cable">${nmJacket(`M35 ${feed.y}H${feed.x+37}`,'feed',13.6)}</g><g data-cable="load" tabindex="0" role="button" aria-label="Select switch-to-fixture cable">${nmJacket(cable,'load',11.4)}</g>
     ${(['switch','fixture'] as BoxId[]).map(box => { const p = mainPlacement[box]; return `<g transform="translate(${p.x} ${p.y}) scale(${p.scale})">${installationAssembly(state,box)}</g>`; }).join('')}
     <text x="36" y="${feed.y-70}" class="hw-board-title">BRANCH-CIRCUIT SUPPLY</text><text x="36" y="${feed.y-43}" class="hw-board-note">120 V · black / white / bare ground</text>
     <text x="595" y="195" class="hw-cable-print">NM-B 14/2 WITH GROUND · SWITCH BOX → CEILING BOX</text>
@@ -121,6 +125,6 @@ export function completeInstallation(state: LessonCircuit) {
     <g data-inspect-box="switch" tabindex="0" role="button" aria-label="Inspect switch assembly" class="hw-inspect"><rect x="245" y="400" width="320" height="378" fill="transparent" stroke="transparent"/><title>Inspect the box, pulled-forward switch, side terminals and loose conductor ends</title></g>
     <g data-inspect-box="fixture" tabindex="0" role="button" aria-label="Inspect ceiling fixture assembly" class="hw-inspect"><rect x="1050" y="140" width="258" height="225" fill="transparent" stroke="transparent"/><title>Inspect the octagonal box and lifted porcelain lamp holder</title></g>
     <text x="294" y="849" class="hw-open-label">INSPECT SWITCH ASSEMBLY ↗</text><text x="1117" y="470" class="hw-open-label">INSPECT CEILING ASSEMBLY ↗</text>
-    <text x="40" y="925" class="hw-board-note">Exploded instructional view · all conductor ends loose · no completed splices · dashed lines indicate mounting alignment</text>
+    <text x="40" y="925" class="hw-board-note">Exploded instructional view · connections reflect your wiring in both boxes · dashed lines indicate mounting alignment</text>
   </svg>`;
 }

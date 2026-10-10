@@ -60,3 +60,16 @@ body.hardware-page { margin:0; color:#333c37; background:#eeefeb; font-family:'S
   .hardware-detail-note { padding:12px 14px; }
   .hardware-scroll-hint { display:block; margin:0; padding:8px 12px; font-size:11px; color:#65745c; }
 }
+/* Interactive rings and tools sit on the approved hardware drawings. */
+.hardware-page #diagram-closeup { background:#fcfcf6; color:#36432e; }
+.hardware-page .diagram-workspace { background:#fcfcf6; }
+.hardware-page .d-box-tools { background:#f2f5ec; }
+.hardware-page .d-box-art { overflow:hidden; }
+.hardware-page #diagram-closeup-art { overflow-x:auto; }
+.hardware-page .hardware-detail-svg { max-height:none; min-height:0; }
+.hardware-page [data-cable] { cursor:pointer; outline:none; }
+.hardware-page [data-cable]:hover path,.hardware-page [data-cable]:focus-visible path { stroke:#c38412; }
+.hw-lamp-on [data-hardware="lightbulb"] { fill:#ffe49a; stroke:#b78622; }
+.d-pigtail-tray { display:grid; gap:5px; }
+.d-bond-status { padding:8px; border:1px solid #a7b29d; }
+@media(max-width:850px) { .hardware-page .hardware-detail-svg { min-width:850px; } }

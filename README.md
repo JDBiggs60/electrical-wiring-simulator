@@ -2,6 +2,23 @@
 
 A browser-based educational wiring workbench for Old Carpenter Workshop. Phase 1 teaches a single-pole switch controlling one light in a simplified U.S. 120 V branch circuit.
 
+## Interactive hardware lesson
+
+The default preview now uses the approved exploded hardware drawings as a working lesson. It reuses the Phase 2B editing workflow, shared circuit model and electrical validator. Main and enlarged views use the same assembly renderer, cable identities, physical ports and connection state. The original artwork study remains at `?view=study`; the earlier Phase 2B layout remains at `?view=lesson`; Phase 1 remains at `?view=trainer`.
+
+All terminations, splices and bonds start disconnected. Grounding pigtails start in the parts tray and must be added explicitly. Select ends using the blue rings or named buttons; select one end and an electrical screw to attach it, or two to four free ends and **Join with connector** to splice. Mounting screws have no electrical interaction. Connector removal and disconnect controls reopen the actual circuit. Grounding status reports the path to the supply ground, not merely whether a screw is occupied.
+
+Test the complete lesson:
+
+1. Open the switch box and add both ground pigtails. Land supply black on brass A and outgoing black on brass B (the brass screws are interchangeable).
+2. Join supply white and outgoing white. Separately join both bare grounds and both pigtail splice ends. Attach the device pigtail terminal end to the green device screw and the box pigtail terminal end to the green box screw.
+3. Open the fixture box and add its fixture-ground and steel-box pigtails. Join incoming black to the black fixture lead splice end, and incoming white to the white fixture lead splice end, using separate connectors. Attach their terminal ends to brass hot and silver neutral.
+4. Join incoming bare ground, fixture-ground splice end and box-bond splice end. Attach their terminal ends to the green fixture strap screw and green box screw respectively.
+5. Return to the circuit, check wiring, turn test power on, then toggle the wall switch. The illustrated toggle changes position and the bulb lights only with valid wiring, power on and switch on.
+6. Turn power off, remove a neutral connector or disconnect a box bond, and check again. Continuity must open and power must be refused. Reset removes all connections and returns ground pigtails to the tray.
+
+Interaction uses selection and attachment rather than freehand dragging. State lasts for the current page session. Tests cover parts-tray identity, electrical faults and continuity, artwork consistency, actual SVG end/screw keyboard selection, connectors, bonds, reset, power, switch, lamp and mobile containment. Publication remains isolated to `/preview/`, with production artifacts preserved by the existing deployment checks; no merge to main is authorized.
+
 ## Run locally
 
 Requires Node.js 24 or newer and npm. No backend, database, account, API key, or external font service is needed.

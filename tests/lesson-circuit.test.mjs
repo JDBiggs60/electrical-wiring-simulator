@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { boxView, checkLessonCircuit, createLessonCircuit, disconnectLessonEnd, joinLessonEnds, lessonContinuity, lessonLayout, removeLessonConnector, setLessonPower, terminateLessonEnd } from '../src/lesson-circuit.ts';
+import { addLessonPigtail, createHardwareCircuit, boxView, checkLessonCircuit, createLessonCircuit, disconnectLessonEnd, joinLessonEnds, lessonContinuity, lessonLayout, removeLessonConnector, setLessonPower, terminateLessonEnd } from '../src/lesson-circuit.ts';
 
 function wired(reverse = false) {
   const s = createLessonCircuit();
@@ -143,4 +143,23 @@ test('test power refuses incomplete wiring and freezes edits until deenergized',
   assert.equal(JSON.stringify(s), before);
   assert.equal(setLessonPower(s, false), null);
   assert.equal(disconnectLessonEnd(s, 'feed.hot.switch'), null);
+});
+
+
+test('hardware parts tray creates unique loose two-ended ground pigtails without prewiring', () => {
+  const s = createHardwareCircuit();
+  assert.equal(s.ends.length, 13);
+  assert.equal(s.leads.length, 2);
+  assert.equal(checkLessonCircuit(s).valid, false);
+  for (const id of ['switch.device-ground','switch.box-ground','fixture.ground','fixture.box-ground']) {
+    assert.equal(addLessonPigtail(s,id),null);
+    assert.ok(addLessonPigtail(s,id));
+  }
+  assert.equal(s.ends.length,21);
+  assert.equal(new Set(s.ends.map(e => e.id)).size,21);
+  assert.deepEqual(s.terminations,{});
+  assert.deepEqual(s.connectors,[]);
+  assert.deepEqual(lessonContinuity(s),lessonContinuity(createLessonCircuit()));
+  s.power = true;
+  assert.match(addLessonPigtail(s,'fixture.ground'), /power off/);
 });

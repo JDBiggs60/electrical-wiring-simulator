@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('approval prototype shows recognizable exploded hardware, loose ends and the preserved lesson link', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror',e => errors.push(e.message));
-  await page.goto('/');
+  await page.goto('/?view=study');
   await expect(page.getByRole('heading',{name:'Residential wiring · hardware study'})).toBeVisible();
   await expect(page.locator('.hardware-review')).toContainText('Visual prototype for approval');
   const drawing = page.locator('#hardware-installation');
@@ -25,7 +25,7 @@ test('approval prototype shows recognizable exploded hardware, loose ends and th
 });
 
 test('enlargements render the same endpoints, cable entries, terminals and state as the complete installation', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=study');
   for (const box of ['switch','fixture']) {
     const original = await page.locator(`#hardware-installation [data-installation-box="${box}"]`).evaluate(element => ({
       ends: [...element.querySelectorAll('[data-end-id]')].map(e => e.outerHTML),
@@ -48,7 +48,7 @@ test('enlargements render the same endpoints, cable entries, terminals and state
 });
 
 test('switch current screws are brass side terminals; grounding and mounting hardware stay distinct', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=study');
   await page.locator('[data-inspect-box="switch"]').focus();
   await page.keyboard.press('Enter');
   const art = page.locator('#hardware-detail-art');
@@ -69,7 +69,7 @@ test('switch current screws are brass side terminals; grounding and mounting har
 
 test('mobile contains drawing overflow and permits inspecting both detailed assemblies', async ({ page }) => {
   await page.setViewportSize({width:390,height:844});
-  await page.goto('/');
+  await page.goto('/?view=study');
   for (const box of ['switch','fixture']) {
     await page.locator(`[data-inspect="${box}"]`).click();
     await expect(page.getByRole('dialog')).toBeVisible();

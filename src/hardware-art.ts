@@ -50,7 +50,7 @@ export function steelDeviceBox() {
 
 /** The dark moulded body projects behind the ivory face. Both current screws
  * occupy the same exposed side; the green screw belongs to the metal yoke. */
-export function pulledToggle() {
+export function pulledToggle(on?: boolean) {
   return `<g data-hardware="single-pole-toggle"><title>Standard single-pole toggle switch, pulled forward from the box. Two brass side terminals and a separate green yoke grounding screw.</title>
     <path d="M58 48 118 42 147 56v190l-29 20-63-8Z" fill="#5c5f5f" stroke="${ink}" stroke-width="1.7"/>
     <path d="M118 42 147 56v190l-29 20Z" fill="#454848" stroke="#333636" stroke-width="1.5"/>
@@ -65,9 +65,9 @@ export function pulledToggle() {
     <path d="M64 68 111 64l6 6v165l-7 7-47 4-5-7V75Z" fill="#f4edce" stroke="#8b8e8e" stroke-width="1.5"/>
     <path d="M66 74 108 70v165l-41 4Z" fill="#fbf7e5" stroke="#d2ccb0" stroke-width="1"/>
     <path d="M76 116 100 113v73l-24 3Z" fill="#8b8b72" stroke="#717474" stroke-width="1.5"/>
-    <path d="M80 129 98 126l7 8v37l-6 8-21 2Z" fill="#fff8dc" stroke="#9d9c7f" stroke-width="1.3"/>
+    <g data-hardware="toggle-lever" transform="translate(0 ${on === undefined ? 0 : on ? -12 : 12})"><path d="M80 129 98 126l7 8v37l-6 8-21 2Z" fill="#fff8dc" stroke="#9d9c7f" stroke-width="1.3"/>
     <path d="M98 126v45l-20 10M82 133l16-3" fill="none" stroke="#c7c0a0" stroke-width="1"/>
-    <text x="87" y="97" text-anchor="middle" class="hw-device-stamp" transform="rotate(-5 87 97)">ON</text>
+    </g><text x="87" y="97" text-anchor="middle" class="hw-device-stamp" transform="rotate(-5 87 97)">ON</text>
     <text x="88" y="215" text-anchor="middle" class="hw-device-stamp" transform="rotate(-5 88 215)">OFF</text>
     <g data-terminal-id="switch.a" data-terminal-kind="hot" data-terminal-location="body-right-side"><title>Brass current-carrying screw A on the side of the switch body</title>${metalScrew(143,103,'brass',true,10)}</g>
     <g data-terminal-id="switch.b" data-terminal-kind="hot" data-terminal-location="body-right-side"><title>Brass current-carrying screw B on the same side of the switch body</title>${metalScrew(143,214,'brass',true,10)}</g>

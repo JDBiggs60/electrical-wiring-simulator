@@ -1,7 +1,9 @@
+import './hardware-prototype.css';
+import { completeInstallation } from './installation-art';
 import './diagram.css';
 
 import { steel, cavity, toggle, holder, knockout } from './diagram-art';
-import { createLessonCircuit, checkLessonCircuit, setLessonPower, endConnection, type LessonCircuit } from './lesson-circuit';
+import { createHardwareCircuit, createLessonCircuit, checkLessonCircuit, setLessonPower, endConnection, type LessonCircuit } from './lesson-circuit';
 import { mountLessonBox } from './lesson-view';
 
 function mainCircuit(state: LessonCircuit, selectedCable: string | null):string {
@@ -35,19 +37,19 @@ function mainCircuit(state: LessonCircuit, selectedCable: string | null):string 
     <text x="35" y="643" class="d-board-small">Select an NM cable or open a box to wire its individual conductors. Crossings do not make connections.</text>
   </svg>`;
 }
-export function mountDiagramPrototype() {
-  const state = createLessonCircuit();
+export function mountDiagramPrototype(hardware = false) {
+  const state = hardware ? createHardwareCircuit() : createLessonCircuit();
   let selectedCable: string | null = null, checked = false;
   let message = 'Open the switch and fixture boxes to connect the loose conductor ends.';
-  document.body.classList.add('diagram-page');
-  document.querySelector('#app')!.innerHTML = '<main class="diagram-shell"></main>';
-  const workspace = mountLessonBox(state, () => { checked = false; render(); });
+  document.body.classList.add(hardware ? 'hardware-page' : 'diagram-page');
+  document.querySelector('#app')!.innerHTML = `<main class="diagram-shell ${hardware ? 'hardware-sheet' : ''}"></main>`;
+  const workspace = mountLessonBox(state, () => { checked = false; render(); }, hardware);
   function render() {
     const result = checkLessonCircuit(state);
     const cable = state.cables.find(c => c.id === selectedCable);
     document.querySelector('.diagram-shell')!.innerHTML = `<header class="diagram-header"><div><span>OLD CARPENTER · ELECTRICAL WIRING SIMULATOR</span><h1>Residential lighting circuit</h1></div><a class="diagram-trainer-link" href="?view=trainer" target="_blank" rel="noopener">Open working Phase 1 trainer ↗</a></header>
       <section class="diagram-review-note"><strong>Phase 2B · wire the circuit</strong><span>Start unwired. Select loose ends, join them with connectors, and attach them to electrical terminals. The incoming supply is the upstream boundary of this lesson.</span></section>
-      <section class="diagram-workspace" aria-label="Residential circuit diagram"><div class="diagram-toolbar"><span>01 · SUPPLY → SWITCH BOX → CEILING FIXTURE</span><div><button data-review-box="switch">Open switch box</button><button data-review-box="fixture">Open fixture box</button></div></div><div class="diagram-canvas">${mainCircuit(state, selectedCable)}</div></section>
+      <section class="diagram-workspace" aria-label="Residential circuit diagram"><div class="diagram-toolbar"><span>01 · SUPPLY → SWITCH BOX → CEILING FIXTURE</span><div><button data-review-box="switch">Open switch box</button><button data-review-box="fixture">Open fixture box</button></div></div><div class="${hardware ? 'hardware-board' : 'diagram-canvas'}">${hardware ? completeInstallation(state) : mainCircuit(state, selectedCable)}</div></section>
       <section class="d-cable-inspector" aria-label="Selected cable">${cable ? `<strong>${cable.label} · ID: ${cable.id}</strong><div>${cable.conductors.map(c => `<span><b>${c.kind === 'hot' ? 'Black' : c.kind === 'neutral' ? 'White' : 'Bare ground'}</b> · ${c.id}: ${state.ends.filter(e => e.conductor === c.id).map(e => `${e.box} end ${endConnection(state, e.id) ? 'connected' : 'loose'}`).join(' / ')}</span>`).join('')}</div><div>${cable.ports.map(p => `<button data-review-box="${p.box}">Open ${p.box} box · ${p.side} entry</button>`).join('')}</div>` : '<span>Select a visible NM cable to inspect its three conductors and box entries.</span>'}</section>
       <section class="d-circuit-controls"><button data-lesson-action="check">Check circuit wiring</button><button data-lesson-action="power" aria-pressed="${state.power}">Turn test power ${state.power ? 'off' : 'on'}</button><button data-lesson-action="switch" aria-pressed="${state.switchOn}">Toggle wall switch · ${state.switchOn ? 'ON' : 'OFF'}</button><button data-lesson-action="reset" ${state.power ? 'disabled' : ''}>Reset to unwired</button><strong id="lesson-light" class="${result.lightOn ? 'light-on' : ''}" role="status">Test power ${state.power ? 'ON' : 'OFF'} · Light ${result.lightOn ? 'ON' : 'OFF'}</strong></section>
       <section class="d-circuit-feedback" aria-live="polite"><p>${message}</p>${checked ? `<strong>${result.valid ? 'Circuit correctly wired.' : 'Check these connections.'}</strong>${result.errors.length ? `<ul>${result.errors.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}<div class="d-continuity">${Object.entries(result.continuity).map(([kind, continuous]) => `<span>${kind}: ${continuous ? 'continuous' : 'open'}</span>`).join('')}</div>` : ''}</section>
@@ -55,18 +57,18 @@ export function mountDiagramPrototype() {
   }
   const shell = document.querySelector('.diagram-shell')!;
   function activate(target: Element) {
-    const box = target.closest('[data-review-box],[data-open-diagram-box]');
-    if (box) { workspace.open((box.getAttribute('data-review-box') ?? box.getAttribute('data-open-diagram-box')) as 'switch' | 'fixture'); return; }
+    const box = target.closest('[data-review-box],[data-open-diagram-box],[data-inspect-box]');
+    if (box) { workspace.open((box.getAttribute('data-review-box') ?? box.getAttribute('data-open-diagram-box') ?? box.getAttribute('data-inspect-box')) as 'switch' | 'fixture'); return; }
     const cable = target.closest('[data-cable]');
     if (cable) { selectedCable = cable.getAttribute('data-cable'); render(); shell.querySelector<HTMLElement>(`[data-cable="${selectedCable}"]`)?.focus(); return; }
     const action = target.closest('[data-lesson-action]')?.getAttribute('data-lesson-action');
     if (action === 'check') { checked = true; message = 'Continuity is calculated from your connections in both boxes.'; }
     if (action === 'power') { const error = setLessonPower(state, !state.power); checked = true; message = error ?? (state.power ? 'Test power is on. Operate the wall switch.' : 'Test power is off. You can edit connections.'); }
     if (action === 'switch') { state.switchOn = !state.switchOn; }
-    if (action === 'reset' && !state.power) { Object.assign(state, createLessonCircuit()); checked = false; message = 'Lesson reset. All conductor terminations are disconnected.'; }
+    if (action === 'reset' && !state.power) { Object.assign(state, (hardware ? createHardwareCircuit() : createLessonCircuit())); checked = false; message = 'Lesson reset. All conductor terminations are disconnected.'; }
     if (action) { render(); shell.querySelector<HTMLElement>(`[data-lesson-action="${action}"]`)?.focus(); }
   }
   shell.addEventListener('click', e => activate(e.target as Element));
-  shell.addEventListener('keydown', e => { const event = e as KeyboardEvent; if ((event.key === 'Enter' || event.key === ' ') && (e.target as Element).matches('[data-cable],[data-open-diagram-box]')) { event.preventDefault(); activate(e.target as Element); } });
+  shell.addEventListener('keydown', e => { const event = e as KeyboardEvent; if ((event.key === 'Enter' || event.key === ' ') && (e.target as Element).matches('[data-cable],[data-open-diagram-box],[data-inspect-box]')) { event.preventDefault(); activate(e.target as Element); } });
   render();
 }
