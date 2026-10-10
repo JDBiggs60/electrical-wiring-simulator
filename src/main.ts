@@ -10,46 +10,65 @@ const icons = {
 };
 const icon = (name: keyof typeof icons) => `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${icons[name]}</svg>`;
 
+function partThumbnail(kind: string): string {
+  const art: Record<string, string> = {
+    panel: '<rect x="9" y="3" width="30" height="42" rx="2" fill="#8c969b" stroke="#4b565e"/><rect x="13" y="8" width="22" height="29" fill="#3e474e"/><path d="M17 14h14m-14 8h14m-14 8h14" stroke="#adb7bd" stroke-width="3"/><path d="M14 41h6m8 0h6" stroke="#d2dce0" stroke-width="2"/>',
+    switch: '<path d="M19 3h11v42H19Z" fill="#b8c1c5" stroke="#68777e"/><rect x="14" y="11" width="21" height="27" rx="2" fill="#e8e8da" stroke="#868a81"/><rect x="21" y="17" width="7" height="14" rx="1" fill="#fffef2" stroke="#b7b9ae"/><circle cx="12" cy="17" r="3" fill="#be9344"/><circle cx="12" cy="32" r="3" fill="#be9344"/><circle cx="35" cy="39" r="3" fill="#467a47"/>',
+    'three-way': '<path d="M19 3h11v42H19Z" fill="#b8c1c5" stroke="#68777e"/><rect x="14" y="11" width="21" height="27" rx="2" fill="#e8e8da" stroke="#868a81"/><rect x="21" y="17" width="7" height="14" fill="#fffef2" stroke="#b7b9ae"/><circle cx="12" cy="17" r="3" fill="#3c4145"/><circle cx="37" cy="17" r="3" fill="#be9344"/><circle cx="37" cy="31" r="3" fill="#be9344"/><circle cx="12" cy="39" r="3" fill="#467a47"/>',
+    outlet: '<path d="M19 2h11v44H19Z" fill="#b8c1c5" stroke="#68777e"/><rect x="12" y="8" width="25" height="32" rx="4" fill="#eeede2" stroke="#949990"/><path d="M18 13v6m11-6v5m-11 10v6m11-6v5" stroke="#4c5354" stroke-width="2"/><path d="M22 23q3-4 5 0m-5 15q3-4 5 0" fill="none" stroke="#4c5354" stroke-width="2"/><circle cx="9" cy="16" r="2.5" fill="#d6dce0"/><circle cx="40" cy="16" r="2.5" fill="#be9344"/><circle cx="9" cy="30" r="2.5" fill="#d6dce0"/><circle cx="40" cy="30" r="2.5" fill="#be9344"/><circle cx="9" cy="38" r="2.5" fill="#467a47"/>',
+    light: '<circle cx="24" cy="30" r="15" fill="#e8e9dc" stroke="#8b9597"/><path d="M20 32h8v6h-8Z" fill="#8b9393"/><path d="M20 32c0-8-8-8-8-17a12 12 0 0 1 24 0c0 9-8 9-8 17Z" fill="#fff9d4" stroke="#b4b8a4"/><path d="M19 36h10" stroke="#5f6a6f"/>',
+    box: '<rect x="7" y="7" width="35" height="35" rx="3" fill="#b6bfc1" stroke="#6c7b82"/><rect x="12" y="12" width="25" height="25" fill="#727e85"/><circle cx="24" cy="24" r="8" fill="none" stroke="#bfc9cd"/><circle cx="7" cy="24" r="4" fill="#8a979d" stroke="#52626c"/>',
+    nuts: '<path d="m5 37 7-25h12l7 25Z" fill="#d99e36" stroke="#9a6c27"/><path d="m25 39 6-19h9l6 19Z" fill="#c58b2b" stroke="#98642d"/><path d="m14 17-3 15m9-15 4 15m9-8-2 12m5-12 3 12" stroke="#edc16b" stroke-width="2"/>',
+  };
+  return `<svg viewBox="0 0 48 48" aria-hidden="true">${art[kind] ?? ''}</svg>`;
+}
+
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <header class="masthead">
-  <div class="brand"><span class="brand-mark">${icon('plug')}</span><div><span class="brand-name">OLD CARPENTER <span>WORKSHOP</span></span><span class="brand-caption">Learn by doing. Build with confidence.</span></div></div>
-  <div class="header-meta"><span class="phase-tag">PHASE 01</span><span>Electrical Wiring Simulator</span></div>
+  <div class="brand"><span class="brand-mark">${icon('plug')}</span><div><span class="brand-name">OLD CARPENTER <span>WORKSHOP</span></span><span class="brand-caption">RESIDENTIAL ELECTRICAL TRAINING</span></div></div>
+  <div class="header-meta"><span class="phase-tag">DESIGN PREVIEW</span><span>Electrical Wiring Simulator</span></div>
 </header>
 <main class="workspace">
-  <section class="page-intro"><div><div class="eyebrow">THE WIRING WORKBENCH</div><h1>A little practice. A lightbulb moment.</h1><p>Build your first circuit, one connection at a time.</p></div><span class="lesson-counter">01 <span>/ LESSON</span></span></section>
+  <section class="page-intro"><div><div class="eyebrow">RESIDENTIAL WIRING LAB · MODULE 01</div><h1>Single-pole lighting circuit</h1><p>Wire the branch circuit. Verify every connection. Energize and test.</p></div><span class="lesson-counter"><span>TRAINING STATION</span> 01</span></section>
   <div class="workspace-grid">
     <aside class="panel toolbox" aria-labelledby="toolbox-title">
       <div class="panel-heading"><span class="panel-number">01</span><h2 id="toolbox-title">Toolbox</h2></div>
-      <p class="panel-subtitle">Everything you need for this circuit.</p>
-      <div class="section-label">WIRE SELECTION</div>
+      <p class="panel-subtitle">Select a conductor. Connect at the terminal screws.</p>
+      <div class="section-label">CONDUCTORS</div>
       <div class="wire-tools" role="group" aria-label="Wire color">
         <button class="wire-tool active" data-color="hot" aria-pressed="true"><span class="wire-swatch hot"></span><span><strong>Hot wire</strong><small>Black · carries power</small></span><span class="selection-dot"></span></button>
         <button class="wire-tool" data-color="neutral" aria-pressed="false"><span class="wire-swatch neutral"></span><span><strong>Neutral wire</strong><small>White · return path</small></span><span class="selection-dot"></span></button>
         <button class="wire-tool" data-color="ground" aria-pressed="false"><span class="wire-swatch ground"></span><span><strong>Ground wire</strong><small>Green · protective bond</small></span><span class="selection-dot"></span></button>
       </div>
       <div class="tool-tip"><span class="mini-number">i</span><p>Select a wire, then click two terminals. You can also drag between terminals.</p></div>
-      <div class="section-label component-label">ON YOUR BENCH</div>
-      <div class="component-item"><span class="component-icon">${icon('bolt')}</span><div><strong>6-space breaker panel</strong><small>2 installed · 4 spare</small></div></div>
-      <div class="component-item"><span class="component-icon switch-mini">I / O</span><div><strong>Single-pole switch</strong><small>2 brass screws + ground</small></div></div>
-      <div class="component-item"><span class="component-icon">${icon('bulb')}</span><div><strong>Light fixture</strong><small>Hot, neutral & ground</small></div></div>
+      <div class="section-label component-label">PARTS &amp; EQUIPMENT</div>
+      <div class="parts-palette">
+      <div class="component-item"><span class="part-graphic">${partThumbnail('panel')}</span><div><strong>Branch circuit panel</strong><small>6 spaces · 2 installed</small></div><span class="part-state">MOUNTED</span></div>
+      <div class="component-item"><span class="part-graphic">${partThumbnail('switch')}</span><div><strong>Single-pole switch</strong><small>2 brass terminals + ground</small></div><span class="part-state">MOUNTED</span></div>
+      <div class="component-item"><span class="part-graphic">${partThumbnail('light')}</span><div><strong>Light fixture</strong><small>Hot / neutral / ground</small></div><span class="part-state">MOUNTED</span></div>
+      <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('three-way')}</span><span><strong>Three-way switch</strong><small>Common + 2 travelers</small></span><span class="part-state">FUTURE</span></button>
+      <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('outlet')}</span><span><strong>Duplex receptacle</strong><small>Hot / neutral / ground</small></span><span class="part-state">FUTURE</span></button>
+      <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('box')}</span><span><strong>Junction box</strong><small>Splices &amp; pigtails</small></span><span class="part-state">FUTURE</span></button>
+      <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('nuts')}</span><span><strong>Wire connectors</strong><small>Insulated splice connectors</small></span><span class="part-state">FUTURE</span></button>
+      </div>
       <div class="connections-heading"><span class="section-label">YOUR CONNECTIONS</span><span id="wire-count">0</span></div>
       <div id="wire-list" class="wire-list"><p class="empty-wires">Your connections will appear here.</p></div>
     </aside>
     <section class="bench-panel" aria-labelledby="bench-title">
-      <div class="bench-heading"><div><span class="section-label">PRACTICE AREA</span><h2 id="bench-title">Your wiring board</h2></div><span id="power-status" class="status-pill"><span></span>Power off</span></div>
+      <div class="bench-heading"><div><span class="section-label">120 V BRANCH CIRCUIT TRAINER</span><h2 id="bench-title">Residential practice board</h2></div><span id="power-status" class="status-pill"><span></span>Power off</span></div>
       <div class="bench-toolbar"><span id="connection-prompt" role="status">Black wire selected · choose a terminal</span><button id="cancel-wire" class="text-button" hidden>Cancel</button></div>
       <div class="board-wrap"><svg id="board" viewBox="0 0 900 640" aria-label="Interactive wiring board" role="group"></svg></div>
       <div class="bench-footer"><span><span class="terminal-example"></span>Click a terminal to connect</span><span>Drag device headers to reposition</span></div>
-      <div class="under-bench"><span class="small-badge">LEARN THE WHY</span><p>A complete circuit gives current a path out <em>and</em> a path back.</p></div>
+      <div class="under-bench"><span class="small-badge">CIRCUIT NOTE</span><p>The switch opens the hot path. A/B brass screws are interchangeable. Neutral returns to the source; ground bonds the equipment.</p></div>
     </section>
     <aside class="panel lesson-panel" aria-labelledby="lesson-title">
       <div class="panel-heading"><span class="panel-number">02</span><h2>Lesson guide</h2></div>
-      <div class="lesson-label">LESSON 01 · BEGINNER</div>
+      <div class="lesson-label">EXERCISE 01 · BRANCH CIRCUITS</div>
       <h2 id="lesson-title" class="lesson-title">Simple light circuit</h2>
-      <p class="lesson-description">Connect a single switch to a light. Give it power, flip the switch, and see your circuit come to life.</p>
-      <div class="learning-objective"><span>${icon('bulb')}</span><p><strong>Your goal</strong>Make the switch control the light, with safe neutral and ground paths.</p></div>
+      <p class="lesson-description">Wire a 15 A lighting branch circuit with one single-pole switch and one fixture. Verify the circuit before energizing.</p>
+      <div class="learning-objective"><span>${icon('bulb')}</span><p><strong>Your goal</strong>Control the fixture through the hot conductor. Provide a direct neutral return and bond both devices.</p></div>
       <div class="section-label">HOW IT WORKS</div>
-      <ol class="key-points"><li><span class="point-dot hot-dot"></span><div><strong>Hot carries power.</strong><p>Black wire runs from Breaker 1 through the switch to the light.</p></div></li><li><span class="point-dot neutral-dot"></span><div><strong>Neutral completes the path.</strong><p>White wire connects the neutral bar directly to the light.</p></div></li><li><span class="point-dot ground-dot"></span><div><strong>Ground protects metal parts.</strong><p>Green or bare wire bonds the switch and fixture to ground. It never replaces neutral.</p></div></li></ol>
+      <ol class="key-points"><li><span class="point-dot hot-dot"></span><div><strong>Hot carries power.</strong><p>Black wire runs from Breaker 1 through the switch to the light. A/B line and load labels are instructional: either brass screw can take line.</p></div></li><li><span class="point-dot neutral-dot"></span><div><strong>Neutral completes the path.</strong><p>White wire connects the neutral bar directly to the light.</p></div></li><li><span class="point-dot ground-dot"></span><div><strong>Ground protects metal parts.</strong><p>Green or bare wire bonds the switch and fixture to ground. It never replaces neutral.</p></div></li></ol>
       <div class="lesson-controls"><button id="power" class="power-button" aria-pressed="false">${icon('bolt')}<span>Turn power on</span></button><button id="check" class="check-button">${icon('check')}Check my wiring</button><div class="secondary-controls"><button id="hint">${icon('bulb')}Hint</button><button id="reset">${icon('reset')}Reset</button></div></div>
       <div id="feedback" class="feedback" role="status" aria-live="polite"><strong>Ready when you are.</strong><p>Start with the black hot wire. Keep power off while you make connections.</p></div>
       <div class="scope-note">A simplified learning model. The panel’s upstream supply and bonding are omitted; neutral and ground stay separate here. Practice only—never use this as an installation guide.</div>
@@ -96,47 +115,82 @@ function wirePath(a: Point, b: Point): string {
   const bend = Math.max(65, Math.abs(b.x - a.x) * .48);
   return `M${a.x},${a.y} C${a.x},${a.y + bend} ${b.x},${b.y + bend} ${b.x},${b.y}`;
 }
+function routedWirePath(wire: Wire): string {
+  let from = wire.from, to = wire.to;
+  if (terminals[to].component === 'panel') [from, to] = [to, from];
+  const a = point(from), b = point(to);
+  let points: Point[];
+  if (wire.color === 'hot' && terminals[from].component === 'panel' && terminals[to].component === 'switch') {
+    const corridor = Math.min(a.x + 65, b.x - 30);
+    points = [a, { x: corridor, y: a.y }, { x: corridor, y: b.y }, b];
+  } else {
+    const baseLane = wire.color === 'hot' ? 488 : wire.color === 'neutral' ? 526 : terminals[to].component === 'switch' ? 558 : 586;
+    const lane = Math.max(baseLane, a.y + 30, b.y + 30);
+    const offset = wire.color === 'ground' && terminals[from].component === 'panel' ? (terminals[to].component === 'switch' ? -16 : 16) : 0;
+    points = offset ? [a, { x: a.x + offset, y: a.y + 24 }, { x: a.x + offset, y: lane }, { x: b.x, y: lane }, b]
+      : [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b];
+  }
+  let d = `M${points[0]!.x},${points[0]!.y}`;
+  for (let i = 1; i < points.length-1; i++) {
+    const prev = points[i-1]!, corner = points[i]!, next = points[i+1]!;
+    const incoming = Math.hypot(corner.x-prev.x, corner.y-prev.y), outgoing = Math.hypot(next.x-corner.x, next.y-corner.y);
+    const r = Math.min(10, incoming / 2, outgoing / 2);
+    if (!incoming || !outgoing) continue;
+    const before = { x: corner.x+(prev.x-corner.x)*r/incoming, y: corner.y+(prev.y-corner.y)*r/incoming };
+    const after = { x: corner.x+(next.x-corner.x)*r/outgoing, y: corner.y+(next.y-corner.y)*r/outgoing };
+    d += ` L${before.x},${before.y} Q${corner.x},${corner.y} ${after.x},${after.y}`;
+  }
+  return `${d} L${b.x},${b.y}`;
+}
 function screw(x: number, y: number): string {
   return `<g><circle cx="${x}" cy="${y}" r="5" fill="#b7b7ac" stroke="#686d66"/><path d="M${x-3},${y}h6" stroke="#636862" stroke-width="1.5"/></g>`;
 }
 function deviceLabel(x: number, y: number, title: string, subtitle: string, device?: string): string {
-  return `<g ${device ? `data-move="${device}" class="device-drag"` : ''}><rect x="${x}" y="${y}" width="${device === 'light' ? 182 : 130}" height="43" rx="5" fill="#fcf6e9" filter="url(#label-shadow)"/><text x="${x+10}" y="${y+17}" class="device-label">${title}</text><text x="${x+10}" y="${y+33}" class="device-subtitle">${subtitle}</text>${device ? `<text x="${x + (device === 'light' ? 162 : 110)}" y="${y+19}" fill="#b8aa96" font-size="17">⠿</text>` : ''}</g>`;
+  const width = device === 'light' ? 182 : 155;
+  return `<g ${device ? `data-move="${device}" class="device-drag"` : ''}><rect x="${x}" y="${y}" width="${width}" height="43" rx="2" fill="#24323c" stroke="#60717d" filter="url(#label-shadow)"/><rect x="${x}" y="${y}" width="4" height="43" fill="#dfa232"/><text x="${x+11}" y="${y+17}" class="device-label">${title}</text><text x="${x+11}" y="${y+33}" class="device-subtitle">${subtitle}</text>${device ? `<text x="${x+width-14}" y="${y+19}" fill="#9cabaf" font-size="16">⠿</text>` : ''}</g>`;
 }
 function panelGraphic(): string {
-  return `<g class="panel-device"><rect x="53" y="87" width="270" height="423" rx="9" fill="url(#panel-metal)" stroke="#818b88" stroke-width="2" filter="url(#device-shadow)"/><rect x="67" y="103" width="242" height="28" rx="3" fill="#4b5a56"/><text x="80" y="122" class="panel-brand">BRANCH CIRCUIT PANEL</text><rect x="68" y="143" width="240" height="253" rx="4" fill="#a4aea9" stroke="#86938c"/>
-    <g><rect x="83" y="156" width="148" height="48" rx="4" fill="#343d3d"/><text x="95" y="176" class="breaker-number">01</text><text x="95" y="194" class="breaker-caption">LIGHT CIRCUIT · 15A</text><rect x="181" y="166" width="31" height="23" rx="3" fill="${power ? '#d6a24e' : '#1d2424'}" stroke="#5f6764"/><path d="M${power ? 202 : 189},171v13" stroke="${power ? '#48331a' : '#989c95'}" stroke-width="3"/><path d="M231 179h33" stroke="#444b47" stroke-width="6"/><text x="249" y="163" class="tiny-label">HOT</text></g>
-    <g><rect x="83" y="220" width="148" height="48" rx="4" fill="#343d3d"/><text x="95" y="240" class="breaker-number">02</text><text x="95" y="258" class="breaker-caption">FUTURE CIRCUIT · 15A</text><rect x="181" y="230" width="31" height="23" rx="3" fill="#1d2424" stroke="#5f6764"/><path d="M189 235v13" stroke="#989c95" stroke-width="3"/><path d="M231 243h33" stroke="#444b47" stroke-width="6"/></g>
-    ${[0, 1, 2, 3].map((n) => {const x = n % 2 === 0 ? 84 : 198, y = 291 + Math.floor(n / 2) * 48;return `<rect x="${x}" y="${y}" width="97" height="37" rx="3" fill="#9ba7a0" stroke="#79887f"/><path d="M${x+8},${y+18}h81" stroke="#8d9b92"/><text x="${x+12}" y="${y+23}" class="spare-label">0${n+3} · SPARE</text>`;}).join('')}
-    <rect x="82" y="410" width="78" height="48" rx="4" fill="#dbded5" stroke="#8e9690"/><rect x="211" y="410" width="78" height="48" rx="4" fill="#b8cdb9" stroke="#7c9781"/>
-    ${screw(97,421)}${screw(141,421)}${screw(226,421)}${screw(272,421)}
-    <text x="119" y="479" text-anchor="middle" class="tiny-label">NEUTRAL</text><text x="250" y="479" text-anchor="middle" class="tiny-label">GROUND</text><text x="188" y="499" text-anchor="middle" class="fine-label">Separate bars · upstream supply omitted</text>
-    ${screw(62,96)}${screw(314,96)}${screw(62,501)}${screw(314,501)}
-    <rect x="81" y="533" width="215" height="44" rx="4" fill="#fcf6e9" filter="url(#label-shadow)"/><text x="95" y="552" class="device-label">THE SOURCE</text><text x="95" y="568" class="device-subtitle">Use Breaker 1 for this lesson</text></g>`;
+  return `<g class="panel-device">
+    <rect x="45" y="80" width="285" height="436" rx="4" fill="url(#panel-metal)" stroke="#4d5c66" stroke-width="3" filter="url(#device-shadow)"/>
+    <path d="M53 94h269v411H53Z" fill="none" stroke="#e0e6e6" stroke-width="2"/><path d="M56 133V99h263v34" fill="#42515c" stroke="#849298"/>
+    <text x="70" y="116" class="panel-brand">6-SPACE LOAD CENTER</text><text x="70" y="128" class="breaker-caption">BRANCH CIRCUITS · TRAINING CUTAWAY</text>
+    <rect x="64" y="140" width="247" height="260" fill="#343d45" stroke="#1a252d" stroke-width="2"/>
+    ${[0,1].map(n => {const y=155+n*64, on=n===0 && power;return `<g><rect x="75" y="${y}" width="156" height="50" rx="2" fill="#19232a" stroke="#74818a"/><rect x="81" y="${y+5}" width="53" height="40" fill="#313c43"/><text x="88" y="${y+19}" class="breaker-number">15</text><text x="88" y="${y+35}" class="breaker-caption">AMP</text><rect x="146" y="${y+8}" width="32" height="34" rx="2" fill="#0e1519" stroke="#505c61"/><rect x="${on ? 157 : 149}" y="${y+13}" width="16" height="24" rx="2" fill="${on ? '#d79b33' : '#778187'}"/><text x="188" y="${y+20}" class="breaker-caption">${on ? 'ON' : 'OFF'}</text><text x="188" y="${y+36}" class="breaker-caption">${n===0 ? 'B1' : 'B2'}</text><text x="88" y="${y+59}" class="breaker-caption">BREAKER ${n+1} · ${n===0 ? 'LIGHTING' : 'RESERVED'}</text><path d="M231 ${y+24}h34" stroke="#191c1c" stroke-width="6"/><text x="252" y="${y+9}" class="panel-terminal-label">HOT ${n+1}</text></g>`;}).join('')}
+    ${[0,1,2,3].map(n => {const y=284+n*27;return `<rect x="77" y="${y}" width="219" height="23" rx="1" fill="#65727b" stroke="#8d9a9f"/><path d="M84 ${y+6}h204" stroke="#75838b"/><text x="89" y="${y+16}" class="spare-label">${n+3} — SPARE / BLANK FILLER</text>`;}).join('')}
+    <rect x="77" y="411" width="83" height="48" rx="2" fill="#d7ddde" stroke="#87969d"/><rect x="207" y="411" width="85" height="48" rx="2" fill="#80938c" stroke="#526d60"/>
+    ${screw(90,422)}${screw(147,422)}${screw(218,422)}${screw(279,422)}
+    <text x="119" y="477" text-anchor="middle" class="tiny-label">NEUTRAL BAR</text><text x="250" y="477" text-anchor="middle" class="tiny-label">GROUND BAR</text>
+    <text x="188" y="497" text-anchor="middle" class="fine-label">Separate bars · upstream supply not shown</text>
+    ${screw(55,90)}${screw(320,90)}${screw(55,505)}${screw(320,505)}
+    <path d="M45 153h-6v32h6m0 245h-6v32h6" fill="#76858c" stroke="#4f626c"/>
+
+  </g>`;
 }
 function switchGraphic(): string {
   const {x,y} = positions.switch;
-  return `<g>${deviceLabel(x, y-58, 'SINGLE-POLE SWITCH', 'Interrupts the hot conductor', 'switch')}
-    <rect x="${x+36}" y="${y}" width="53" height="231" rx="7" fill="url(#switch-metal)" stroke="#8b9385" filter="url(#device-shadow)"/><rect x="${x+24}" y="${y+34}" width="80" height="147" rx="8" fill="#ddd7c5" stroke="#aaa891"/><rect x="${x+30}" y="${y+45}" width="68" height="125" rx="6" fill="#f1e9d5" stroke="#c5bea7"/>
+  return `<g>${deviceLabel(x, y-58, 'SINGLE-POLE SWITCH', '2 brass screws · 1 ground', 'switch')}
+    <rect x="${x-8}" y="${y+24}" width="140" height="185" rx="3" fill="url(#panel-metal)" stroke="#6b7b80" stroke-width="2"/><rect x="${x+1}" y="${y+33}" width="122" height="167" rx="2" fill="#49565c" stroke="#9ca7a8"/><path d="M${x+5} ${y+55}v121m114-121v121" stroke="#35444c" stroke-width="3"/><rect x="${x+36}" y="${y}" width="53" height="231" rx="7" fill="url(#switch-metal)" stroke="#8b9385" filter="url(#device-shadow)"/><rect x="${x+24}" y="${y+34}" width="80" height="147" rx="8" fill="#ddd7c5" stroke="#aaa891"/><rect x="${x+30}" y="${y+45}" width="68" height="125" rx="6" fill="#f1e9d5" stroke="#c5bea7"/>
     <title>Mounting screws at top and bottom are not wiring terminals.</title>${screw(x+62,y+16)}${screw(x+62,y+214)}
     <rect x="${x+4}" y="${y+58}" width="30" height="24" rx="4" fill="#ac8542"/><rect x="${x+4}" y="${y+136}" width="30" height="24" rx="4" fill="#ac8542"/><rect x="${x+93}" y="${y+176}" width="25" height="24" rx="4" fill="#527e54"/>
     <g data-action="switch" class="switch-toggle" role="button" tabindex="0" aria-label="Toggle light switch" aria-pressed="${switchOn}"><rect x="${x+40}" y="${y+58}" width="48" height="100" rx="5" fill="#998f78" stroke="#827a65"/><rect x="${x+45}" y="${y+62}" width="38" height="92" rx="3" fill="#c2b69b"/><path d="M${x+47},${y+(switchOn ? 72 : 106)}h34v32h-34Z" fill="url(#toggle-ivory)" stroke="#c6b999"/><text x="${x+64}" y="${y+55}" text-anchor="middle" class="tiny-label">ON</text><text x="${x+64}" y="${y+169}" text-anchor="middle" class="tiny-label">OFF</text></g>
-    <text x="${x-5}" y="${y+48}" class="terminal-caption">A</text><text x="${x-5}" y="${y+126}" class="terminal-caption">B</text><text x="${x+92}" y="${y+171}" class="terminal-caption">G</text>
-    <text x="${x+64}" y="${y+255}" text-anchor="middle" class="board-note">SWITCH ${switchOn ? 'ON' : 'OFF'}</text></g>`;
+    <text x="${x-5}" y="${y+48}" class="terminal-caption">A · LINE*</text><text x="${x-5}" y="${y+126}" class="terminal-caption">B · LOAD*</text><text x="${x+92}" y="${y+171}" class="terminal-caption">G</text>
+    <text x="${x+64}" y="${y+242}" text-anchor="middle" class="board-note">SWITCH ${switchOn ? 'ON' : 'OFF'}</text></g>`;
 }
 function lightGraphic(on: boolean): string {
   const {x,y} = positions.light;
-  return `<g>${deviceLabel(x, y-43, 'LIGHT FIXTURE', 'A complete path makes it shine', 'light')}
+  return `<g>${deviceLabel(x, y-43, 'LIGHT FIXTURE', 'Porcelain holder · bonded box', 'light')}
     ${on ? `<circle cx="${x+91}" cy="${y+96}" r="110" fill="url(#light-glow)" class="bulb-glow"/>` : ''}
+    <path d="M${x+42} ${y+49}h98l17 18v89l-17 18H${x+42}l-17-18V${y+67}Z" fill="url(#panel-metal)" stroke="#76828b" stroke-width="2"/>
     <ellipse cx="${x+91}" cy="${y+124}" rx="79" ry="23" fill="#8f806f" opacity=".22"/>
     <circle cx="${x+91}" cy="${y+101}" r="73" fill="url(#fixture-ceramic)" stroke="#c7bfad" filter="url(#device-shadow)"/><circle cx="${x+91}" cy="${y+101}" r="59" fill="none" stroke="#d1c9b7"/>
     ${screw(x+34,y+102)}${screw(x+148,y+102)}
     <rect x="${x+65}" y="${y+103}" width="52" height="39" rx="7" fill="#8d8b7d" stroke="#737468"/><path d="M${x+68} ${y+111}h46m-46 9h46m-46 9h46" stroke="#b9b6a3" stroke-width="3"/>
     <path d="M${x+65},${y+108} C${x+67},${y+95} ${x+47},${y+88} ${x+48},${y+64} C${x+48},${y+10} ${x+134},${y+10} ${x+134},${y+64} C${x+135},${y+88} ${x+115},${y+95} ${x+117},${y+108}Z" fill="${on ? 'url(#lit-bulb)' : 'url(#unlit-bulb)'}" stroke="${on ? '#d7a447' : '#ccc6b2'}" stroke-width="2"/>
     <path d="M${x+78},${y+104}v-25l8 7 10-12 9 8v22" fill="none" stroke="${on ? '#fff8c2' : '#b8ad8c'}" stroke-width="2.5"/><path d="M${x+61},${y+52}q5-17 24-20" fill="none" stroke="#fffef4" stroke-width="5" stroke-linecap="round" opacity=".65"/>
-    <path d="M${x+49},${y+159}v23H${x+23}v38M${x+91},${y+159}v61M${x+131},${y+159}v23h28v38" fill="none" stroke="#918976" stroke-width="3"/>
-    <rect x="${x+4}" y="${y+206}" width="174" height="47" rx="5" fill="#e9dfc9" stroke="#c4b69a"/>
+    <path d="M${x+49},${y+159}v23H${x+23}v38" fill="none" stroke="#252a2c" stroke-width="4"/><path d="M${x+91},${y+159}v61" fill="none" stroke="#f9f8ee" stroke-width="4"/><path d="M${x+141},${y+152}v30h18v38" fill="none" stroke="#3c8950" stroke-width="4"/>
+    <rect x="${x+4}" y="${y+206}" width="174" height="47" rx="5" fill="#cbc8b3" stroke="#939582"/>
     <text x="${x+23}" y="${y+198}" text-anchor="middle" class="terminal-caption">HOT</text><text x="${x+91}" y="${y+198}" text-anchor="middle" class="terminal-caption">NEUTRAL</text><text x="${x+159}" y="${y+198}" text-anchor="middle" class="terminal-caption">GROUND</text>
-    <text x="${x+91}" y="${y+279}" text-anchor="middle" class="board-note">LIGHT ${on ? 'ON' : 'OFF'}</text></g>`;
+    <text x="${x+91}" y="${y+274}" text-anchor="middle" class="board-note">LIGHT ${on ? 'ON' : 'OFF'}</text></g>`;
 }
 function terminalGraphic(id: TerminalId): string {
   const p = point(id), t = terminals[id], selected = selectedTerminal === id;
@@ -149,22 +203,23 @@ function render() {
   board.innerHTML = `<defs>
     <filter id="device-shadow" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="2" dy="6" stdDeviation="5" flood-color="#3c2e1d" flood-opacity=".21"/></filter>
     <filter id="label-shadow"><feDropShadow dx="0" dy="2" stdDeviation="1" flood-color="#665236" flood-opacity=".14"/></filter>
-    <linearGradient id="panel-metal" x2="1" y2="1"><stop stop-color="#d7ddd5"/><stop offset=".5" stop-color="#c5cec6"/><stop offset="1" stop-color="#b4bfb6"/></linearGradient>
-    <linearGradient id="switch-metal"><stop stop-color="#c7cbbd"/><stop offset=".5" stop-color="#e6e8d9"/><stop offset="1" stop-color="#a1aa99"/></linearGradient>
+    <linearGradient id="panel-metal" x2="1" y2="1"><stop stop-color="#d2d9dc"/><stop offset=".5" stop-color="#a6b1b8"/><stop offset="1" stop-color="#7e8d96"/></linearGradient>
+    <linearGradient id="switch-metal"><stop stop-color="#aeb9bc"/><stop offset=".5" stop-color="#e2e8e8"/><stop offset="1" stop-color="#8a979d"/></linearGradient>
     <linearGradient id="toggle-ivory" x2="0" y2="1"><stop stop-color="#fff9e9"/><stop offset="1" stop-color="#ded2b5"/></linearGradient>
     <radialGradient id="fixture-ceramic"><stop stop-color="#fffef5"/><stop offset="1" stop-color="#e6e0ce"/></radialGradient>
     <radialGradient id="unlit-bulb"><stop stop-color="#fbf9e9"/><stop offset="1" stop-color="#ddd8c4"/></radialGradient>
     <radialGradient id="lit-bulb"><stop stop-color="#fffef3"/><stop offset=".65" stop-color="#ffeeb1"/><stop offset="1" stop-color="#f6ce68"/></radialGradient>
     <radialGradient id="light-glow"><stop stop-color="#ffe57d" stop-opacity=".7"/><stop offset="1" stop-color="#ffe57d" stop-opacity="0"/></radialGradient>
-    <pattern id="board-grid" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="14" cy="14" r="1" fill="#9c8261" opacity=".25"/></pattern>
+    <pattern id="board-grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M0 5q14-4 28 0M0 22q14 3 28 0" fill="none" stroke="#9c7950" stroke-opacity=".12"/></pattern>
   </defs>
-  <rect x="17" y="22" width="866" height="596" rx="9" fill="#b79a73" opacity=".25"/><rect x="12" y="15" width="876" height="600" rx="8" fill="#eee0c5" stroke="#c3ad89" stroke-width="2"/><rect x="13" y="16" width="874" height="598" rx="8" fill="url(#board-grid)"/>
-  <path d="M14 35h872M14 595h872" stroke="#e5d4b2"/><text x="37" y="53" class="board-caption">OLD CARPENTER / WIRING PRACTICE BOARD</text><text x="858" y="53" text-anchor="end" class="board-caption">120V MODEL · POWER ${power ? 'ON' : 'OFF'}</text>
-  ${screw(30,33)}${screw(870,33)}${screw(30,597)}${screw(870,597)}
+  <rect x="7" y="9" width="886" height="620" rx="3" fill="#34434e" stroke="#1a2933" stroke-width="4"/><rect x="22" y="26" width="856" height="588" rx="2" fill="#cdb38a" stroke="#8d7656" stroke-width="2"/><rect x="23" y="27" width="854" height="586" fill="url(#board-grid)"/><g stroke="#9d8058" stroke-opacity=".18" fill="none">${[110,210,330,460,590].map(y => `<path d="M23 ${y}C260 ${y-18} 400 ${y+14} 878 ${y-2}"/>`).join('')}</g>
+  <path d="M14 35h872M14 595h872" stroke="#e5d4b2"/><text x="37" y="53" class="board-caption">OCW / RESIDENTIAL ELECTRICAL TRAINER</text><text x="858" y="53" text-anchor="end" class="board-caption">120V MODEL · POWER ${power ? 'ON' : 'OFF'}</text>
+  ${screw(15,18)}${screw(885,18)}${screw(15,620)}${screw(885,620)}
+  <text x="369" y="112" class="board-note">01 / SUPPLY → SWITCH → LOAD</text><text x="369" y="131" class="fine-label">Click terminal screws · mounting screws are not connections</text>
   ${panelGraphic()}${switchGraphic()}${lightGraphic(result.lightOn)}
-  <g id="wires">${wires.map(w => {const d = wirePath(point(w.from), point(w.to));return `<g data-wire="${w.id}" class="wire-connection"><title>${names[w.color]} wire: ${terminals[w.from].label} to ${terminals[w.to].label}. Select to remove.</title><path d="${d}" fill="none" stroke="${selectedWire === w.id ? '#d79e40' : '#78654d'}" stroke-opacity="${selectedWire === w.id ? 1 : .45}" stroke-width="${selectedWire === w.id ? 10 : 7}"/><path d="${d}" fill="none" stroke="${colors[w.color]}" stroke-width="4.5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="transparent" stroke-width="17" class="wire-hit"/></g>`;}).join('')}</g>
+  <g id="wires">${wires.map(w => {const d = routedWirePath(w);return `<g data-wire="${w.id}" class="wire-connection"><title>${names[w.color]} wire: ${terminals[w.from].label} to ${terminals[w.to].label}. Select to remove.</title><path d="${d}" fill="none" stroke="${selectedWire === w.id ? '#efad35' : '#73664d'}" stroke-opacity="${selectedWire === w.id ? 1 : .8}" stroke-width="${selectedWire === w.id ? 10 : 7}"/><path d="${d}" fill="none" stroke="${colors[w.color]}" stroke-width="5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="transparent" stroke-width="17" class="wire-hit"/></g>`;}).join('')}</g>
   <path id="preview-wire" d="${selectedTerminal && ghost ? wirePath(point(selectedTerminal), ghost) : ''}" fill="none" stroke="${colors[selectedColor]}" stroke-width="4" stroke-dasharray="7 5" pointer-events="none"/>
-  ${Object.keys(terminals).map(id => terminalGraphic(id as TerminalId)).join('')}`;
+  ${Object.keys(terminals).map(id => terminalGraphic(id as TerminalId)).join('')}<text x="369" y="608" class="fine-label">WIRE CROSSINGS ARE NOT JOINTS · CONNECTIONS OCCUR AT TERMINALS ONLY</text>`;
   if (active) board.querySelector<SVGGElement>(`[data-terminal="${active}"]`)?.focus();
   const status = document.querySelector('#power-status')!;
   status.classList.toggle('energized', power);

@@ -33,6 +33,12 @@ Click two terminals or drag between them to create a wire. Drag device labels to
 
 Power cannot turn on unless the entire lesson circuit is correct. Changing wires while powered is blocked. To test incorrect feedback, connect Breaker 1 straight to light HOT, omit a ground, use Breaker 2, or connect ground to light NEUTRAL. Each must keep power off and explain the issue.
 
+## Training board presentation
+
+The local redesign uses a framed plywood trainer with a steel load-center cutaway, a metal-box single-pole switch, and a porcelain-style light holder. Black hot, white neutral, and green grounding wires follow separate instructional routing lanes; crossings are not electrical joints. The switch A/B line/load labels describe this lesson’s routing, not polarized switch terminals—either brass screw can receive line.
+
+The parts palette shows the mounted Phase 1 devices plus inactive future three-way switch, duplex receptacle, junction box, and splice connector items. Future items do not add devices or change the lesson’s circuit model.
+
 ## Electrical model and scope
 
 - Six breaker spaces: two installed single-pole 15 A breakers and four spare spaces. Breaker 1 is the lesson source; Breaker 2 remains off and is reserved for later lessons.
@@ -81,3 +87,9 @@ Adding the workflow does not itself publish a site. GitHub Pages deployment has 
 - `tests/lesson.spec.ts`: real Chromium interaction checks.
 
 Only Phase 1 is implemented. Additional loads, receptacles, multiple lights, and advanced lessons are intentionally outside this version.
+
+## Isolated design preview branch
+
+`codex/training-board-preview` hosts the redesigned trainer at `/preview/`. Its branch-only Pages workflow retains the exact original production artifact at the site root and verifies each public file against the live site by SHA-256 before packaging. It refuses publication if main moves beyond the baseline commit or production files differ. A branch push tests and prepares an artifact; only a manual workflow dispatch can deploy it, after the branch is explicitly permitted in the `github-pages` environment.
+
+This workflow and `scripts/prepare-preview.mjs` are preview infrastructure, not intended to replace main’s production workflow in a future design pull request. The preview is temporary: a future production deployment from main replaces the site and removes `/preview/`.

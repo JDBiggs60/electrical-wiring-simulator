@@ -1,15 +1,16 @@
-name: Test and deploy GitHub Pages
+# This branch-only workflow must not replace the production workflow on main.
+name: Test and publish isolated design preview
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches: [codex/training-board-preview]
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
-  group: pages-${{ github.ref }}
-  cancel-in-progress: true
+  # Share main's deployment queue so the two versions cannot deploy concurrently.
+  group: pages-refs/heads/main
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,21 +25,29 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - run: npm run build
+      - name: Preserve production and stage the separate preview
+        run: node scripts/prepare-preview.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/upload-pages-artifact@v3
-        if: github.event_name != 'pull_request'
         with:
-          path: dist
+          path: _preview-site
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/training-board-preview'
     needs: build
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: https://jdbiggs60.github.io/electrical-wiring-simulator/preview/
     steps:
-      - name: Deploy
-        id: deployment
+      - name: Ensure main still matches the production baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(gh api repos/JDBiggs60/electrical-wiring-simulator/commits/main --jq .sha)" = ef403a7747cd426126bbfbaf5e8675ab86a1c146
+      - name: Publish combined artifact with production unchanged
         uses: actions/deploy-pages@v4
