@@ -116,7 +116,7 @@ export function completeInstallation(state: LessonCircuit) {
     ${(['switch','fixture'] as BoxId[]).map(box => { const p = mainPlacement[box]; return `<g transform="translate(${p.x} ${p.y}) scale(${p.scale})">${installationAssembly(state,box)}</g>`; }).join('')}
     <text x="36" y="${feed.y-70}" class="hw-board-title">BRANCH-CIRCUIT SUPPLY</text><text x="36" y="${feed.y-43}" class="hw-board-note">120 V · black / white / bare ground</text>
     <text x="595" y="195" class="hw-cable-print">NM-B 14/2 WITH GROUND · SWITCH BOX → CEILING BOX</text>
-    <text x="276" y="330" class="hw-board-title">STEEL SWITCH BOX</text><text x="742" y="365" class="hw-board-title">SINGLE-POLE SWITCH</text>
+    <text x="245" y="330" class="hw-board-title">STEEL SWITCH BOX</text><text x="742" y="365" class="hw-board-title">SINGLE-POLE SWITCH</text>
     <text x="1118" y="105" class="hw-board-title">CEILING BOX</text><text x="1461" y="181" class="hw-board-title">KEYLESS HOLDER</text>
     <g data-inspect-box="switch" tabindex="0" role="button" aria-label="Inspect switch assembly" class="hw-inspect"><rect x="245" y="400" width="320" height="378" fill="transparent" stroke="transparent"/><title>Inspect the box, pulled-forward switch, side terminals and loose conductor ends</title></g>
     <g data-inspect-box="fixture" tabindex="0" role="button" aria-label="Inspect ceiling fixture assembly" class="hw-inspect"><rect x="1050" y="140" width="258" height="225" fill="transparent" stroke="transparent"/><title>Inspect the octagonal box and lifted porcelain lamp holder</title></g>
