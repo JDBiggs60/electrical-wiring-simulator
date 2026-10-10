@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('NM cable splices carry continuity and power prevents editing', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto('/');
+  await page.goto('/?view=trainer');
   await page.getByRole('button', { name: 'Load NM cable example' }).click();
   await expect(page.locator('.nm-cables')).toHaveCount(1);
   await expect(page.locator('[data-terminal^="switch."]')).toHaveCount(3);
@@ -35,7 +35,7 @@ test('NM cable splices carry continuity and power prevents editing', async ({ pa
 });
 
 test('a metal-box bonding pigtail is required independently of the device ground', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=trainer');
   await page.getByRole('button', { name: 'Load NM cable example' }).click();
   await page.locator('.conductor-details summary').click();
   await page.locator('[data-conductor="switch-box-bond"]').click();
@@ -48,7 +48,7 @@ test('a metal-box bonding pigtail is required independently of the device ground
 });
 
 test('the original terminal exercise survives using the cable example and reset clears both modes', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=trainer');
   await page.locator('[data-terminal="panel.hot1"]').click();
   await page.locator('[data-terminal="switch.a"]').click();
   await expect(page.locator('#wire-count')).toHaveText('1');
@@ -65,7 +65,7 @@ test('the original terminal exercise survives using the cable example and reset 
 
 test('box inspection and splice controls fit mobile and remain keyboard accessible', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/?view=trainer');
   await page.getByRole('button', { name: 'Load NM cable example' }).focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('.inspection-diagram')).toBeVisible();

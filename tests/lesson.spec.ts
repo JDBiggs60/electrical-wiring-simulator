@@ -17,7 +17,7 @@ async function wireCircuit(page: Page) {
 test('complete lesson: check, power, toggle, safe editing, and reset', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
-  await page.goto('/');
+  await page.goto('/?view=trainer');
   await expect(page.getByRole('heading', { name: 'Simple light circuit' })).toBeVisible();
   await wireCircuit(page);
   await page.getByRole('button', { name: 'Check my wiring' }).click();
@@ -41,7 +41,7 @@ test('complete lesson: check, power, toggle, safe editing, and reset', async ({ 
 });
 
 test('bad wiring has understandable feedback and cannot energize', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=trainer');
   await connect(page, 'panel.hot1', 'light.hot');
   await page.getByRole('button', { name: 'Turn power on' }).click();
   await expect(page.locator('#feedback')).toContainText('bypasses the switch');
@@ -54,7 +54,7 @@ test('bad wiring has understandable feedback and cannot energize', async ({ page
 });
 
 test('dragging wires connects terminals; moving a component keeps wires attached', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=trainer');
   const from = await terminal(page, 'panel.hot1').boundingBox();
   const to = await terminal(page, 'switch.a').boundingBox();
   await page.mouse.move(from!.x + from!.width/2, from!.y + from!.height/2);
@@ -74,7 +74,7 @@ test('dragging wires connects terminals; moving a component keeps wires attached
 });
 
 test('keyboard terminals connect and selected wires can be removed', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=trainer');
   await terminal(page, 'panel.hot1').focus();
   await page.keyboard.press('Enter');
   await terminal(page, 'switch.a').focus();
@@ -87,7 +87,7 @@ test('keyboard terminals connect and selected wires can be removed', async ({ pa
 
 test('mobile layout fits the viewport and the board scrolls within its panel', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/?view=trainer');
   await expect(page.getByRole('heading', { name: 'Simple light circuit' })).toBeVisible();
   const width = await page.evaluate(() => ({ body: document.documentElement.scrollWidth, viewport: window.innerWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport);
