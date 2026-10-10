@@ -1,4 +1,5 @@
 import './style.css';
+import { createNMExample, evaluateBoxWiring, type BoxWiring } from './box-wiring';
 import { evaluateCircuit, terminals, type TerminalId, type Wire, type WireColor } from './circuit';
 
 const icons = {
@@ -49,16 +50,18 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('three-way')}</span><span><strong>Three-way switch</strong><small>Common + 2 travelers</small></span><span class="part-state">FUTURE</span></button>
       <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('outlet')}</span><span><strong>Duplex receptacle</strong><small>Hot / neutral / ground</small></span><span class="part-state">FUTURE</span></button>
       <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('box')}</span><span><strong>Junction box</strong><small>Splices &amp; pigtails</small></span><span class="part-state">FUTURE</span></button>
-      <button class="component-item future-part" disabled><span class="part-graphic">${partThumbnail('nuts')}</span><span><strong>Wire connectors</strong><small>Insulated splice connectors</small></span><span class="part-state">FUTURE</span></button>
+      <div class="component-item"><span class="part-graphic">${partThumbnail('nuts')}</span><span><strong>Wire nuts &amp; pigtails</strong><small>Inspect in NM cable example</small></span><span class="part-state">EXAMPLE</span></div>
       </div>
       <div class="connections-heading"><span class="section-label">YOUR CONNECTIONS</span><span id="wire-count">0</span></div>
       <div id="wire-list" class="wire-list"><p class="empty-wires">Your connections will appear here.</p></div>
     </aside>
     <section class="bench-panel" aria-labelledby="bench-title">
       <div class="bench-heading"><div><span class="section-label">120 V BRANCH CIRCUIT TRAINER</span><h2 id="bench-title">Residential practice board</h2></div><span id="power-status" class="status-pill"><span></span>Power off</span></div>
+      <div class="wiring-modes" role="group" aria-label="Wiring exercise mode"><button id="terminal-mode" aria-pressed="true">Terminal wiring</button><button id="nm-example" aria-pressed="false">Load NM cable example</button><span>Inspect cable conductors, splices and box bonds</span></div>
       <div class="bench-toolbar"><span id="connection-prompt" role="status">Black wire selected · choose a terminal</span><button id="cancel-wire" class="text-button" hidden>Cancel</button></div>
       <div class="board-wrap"><svg id="board" viewBox="0 0 900 640" aria-label="Interactive wiring board" role="group"></svg></div>
       <div class="bench-footer"><span><span class="terminal-example"></span>Click a terminal to connect</span><span>Drag device headers to reposition</span></div>
+      <section class="box-inspector" aria-labelledby="box-inspector-title"><div class="inspector-heading"><h3 id="box-inspector-title">Inside the boxes</h3><div><button data-inspect="switch" aria-expanded="false">Inspect switch box</button><button data-inspect="light" aria-expanded="false">Inspect fixture box</button></div></div><div id="box-detail" aria-live="polite"><p>Open a box view to inspect the mounting hardware and connections. Load the NM cable example to examine working splices.</p></div></section>
       <div class="under-bench"><span class="small-badge">CIRCUIT NOTE</span><p>The switch opens the hot path. A/B brass screws are interchangeable. Neutral returns to the source; ground bonds the equipment.</p></div>
     </section>
     <aside class="panel lesson-panel" aria-labelledby="lesson-title">
@@ -84,6 +87,9 @@ const originalPositions = JSON.parse(JSON.stringify(positions)) as typeof positi
 const colors: Record<WireColor, string> = { hot: '#273031', neutral: '#fffaf0', ground: '#38945b' };
 const names: Record<WireColor, string> = { hot: 'Black', neutral: 'White', ground: 'Green' };
 let wires: Wire[] = [];
+let boxWiring: BoxWiring | null = null;
+let inspectedBox: 'switch' | 'light' | null = null;
+function currentResult() { return boxWiring ? evaluateBoxWiring(boxWiring, power, switchOn) : evaluateCircuit(wires, power, switchOn); }
 let nextId = 1;
 let selectedColor: WireColor = 'hot';
 let selectedTerminal: TerminalId | null = null;
@@ -176,6 +182,8 @@ function switchGraphic(): string {
     <path d="M${x+38} ${y}h48v35h10v137h-10v9h32v24H${x+86}v26H${x+38}v-52h-9V${y+35}h9Z" transform="translate(0 0)" fill="url(#switch-metal)" stroke="#78888e" filter="url(#device-shadow)"/>
     <rect x="${x+53}" y="${y+9}" width="18" height="14" rx="7" fill="#354149" stroke="#7d8b90"/>
     <rect x="${x+53}" y="${y+208}" width="18" height="14" rx="7" fill="#354149" stroke="#7d8b90"/>
+    <g class="mounting-hardware"><title>Steel device mounting screws: mechanical fasteners, not wiring terminals.</title>${screw(x+62,y+16)}${screw(x+62,y+214)}</g>
+    <path d="M${x-4} ${y+37}v158h131M${x+3} ${y+38}h119" fill="none" stroke="#e3e8e8" stroke-width="2"/><circle cx="${x+9}" cy="${y+110}" r="8" fill="none" stroke="#7a898e"/><circle cx="${x+115}" cy="${y+110}" r="8" fill="none" stroke="#7a898e"/>
     <rect x="${x+4}" y="${y+58}" width="29" height="24" rx="3" fill="#a78035" stroke="#634a21"/>
     <rect x="${x+4}" y="${y+136}" width="29" height="24" rx="3" fill="#a78035" stroke="#634a21"/>
     <rect x="${x+35}" y="${y+38}" width="54" height="143" rx="7" fill="url(#toggle-ivory)" stroke="#a79d83" stroke-width="2"/>
@@ -215,9 +223,82 @@ function terminalGraphic(id: TerminalId): string {
   const fill = t.kind === 'hot' ? '#c39a4e' : t.kind === 'neutral' ? '#e0e0d5' : '#44794b';
   return `<g data-terminal="${id}" class="terminal ${selected ? 'selected' : ''}" role="button" tabindex="0" aria-label="${t.label}" aria-pressed="${selected}"><title>${t.label} · ${names[t.kind]} wire</title><circle cx="${p.x}" cy="${p.y}" r="18" fill="transparent"/><circle cx="${p.x}" cy="${p.y}" r="13" fill="${selected ? '#f4bd5b' : '#f4e9cb'}" stroke="${selected ? '#8c591b' : '#82735c'}" stroke-width="${selected ? 3 : 1}"/><circle cx="${p.x}" cy="${p.y}" r="9" fill="${fill}" stroke="#635c4a"/><path d="M${p.x-5},${p.y}h10" stroke="#5d573e" stroke-width="2"/><circle cx="${p.x}" cy="${p.y}" r="15" class="focus-ring" fill="none" stroke="#266b73" stroke-width="3"/></g>`;
 }
+function cableGraphic(): string {
+  const s = positions.switch, l = positions.light;
+  const paths = [
+    `M188,493 V545 Q188,555 198,555 H${s.x+20} Q${s.x+35},555 ${s.x+35},540 V${s.y+198}`,
+    `M${s.x+111},${s.y+198} V570 Q${s.x+111},580 ${s.x+126},580 H${l.x+81} Q${l.x+91},580 ${l.x+91},570 V${l.y+172}`,
+  ];
+  return `<g class="nm-cables"><title>Two 14/2 NM-B cables: black, white, and bare equipment ground inside each sheath.</title>${paths.map(d => `<path d="${d}" fill="none" stroke="#796e5a" stroke-width="18" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#e7dfc7" stroke-width="14" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#f9f4e2" stroke-opacity=".65" stroke-width="3" stroke-linejoin="round"/>`).join('')}
+    <text x="350" y="546" class="board-note">14/2 NM-B + GROUND</text><text x="593" y="570" class="board-note">14/2 NM-B + GROUND</text>
+    ${[s.x+35,s.x+111].map(x => `<rect x="${x-12}" y="${s.y+202}" width="24" height="11" rx="2" fill="url(#panel-metal)" stroke="#65767d"/>${screw(x-7,s.y+207)}${screw(x+7,s.y+207)}`).join('')}
+    <rect x="${l.x+78}" y="${l.y+156}" width="26" height="15" rx="3" fill="url(#panel-metal)" stroke="#65767d"/>
+    <text x="${s.x+2}" y="${s.y+262}" class="fine-label">Sheath ends inside box · inspect below</text>
+  </g>`;
+}
+function boxDiagram(box: 'switch' | 'light', layout: BoxWiring): string {
+  const p: Record<string, Point> = box === 'switch' ? {
+    'feed.out.hot': {x:88,y:110}, 'feed.out.neutral': {x:100,y:110}, 'feed.out.ground': {x:112,y:110},
+    'load.in.hot': {x:286,y:110}, 'load.in.neutral': {x:298,y:110}, 'load.in.ground': {x:310,y:110},
+    'switch.a': {x:174,y:170}, 'switch.b': {x:174,y:245}, 'switch.ground': {x:254,y:305},
+    'switch.ground.tail': {x:292,y:345}, 'switch.box.tail': {x:304,y:345}, 'switch.box': {x:364,y:340},
+  } : {
+    'load.out.hot': {x:82,y:110}, 'load.out.neutral': {x:94,y:110}, 'load.out.ground': {x:106,y:110},
+    'fixture.hot.lead': {x:192,y:222}, 'fixture.neutral.lead': {x:222,y:282}, 'fixture.ground.lead': {x:256,y:342},
+    'fixture.box.tail': {x:268,y:342}, 'light.hot': {x:430,y:150}, 'light.neutral': {x:455,y:150},
+    'light.ground': {x:480,y:150}, 'light.box': {x:310,y:342},
+  };
+  const splicePoints: Record<string, Point> = box === 'switch'
+    ? {'switch-neutral':{x:100,y:298},'switch-ground':{x:286,y:343}}
+    : {'fixture-hot':{x:186,y:220},'fixture-neutral':{x:216,y:280},'fixture-ground':{x:250,y:340}};
+  for (const splice of layout.splices.filter(s => s.box === box)) {
+    const center = splicePoints[splice.id]!;
+    splice.members.forEach((member,i) => {p[member] = {x:center.x-6+i*12,y:center.y+5};});
+  }
+  const stroke = (kind: WireColor, bare = false) => bare ? '#c68a54' : colors[kind];
+  const line = (a: Point,b: Point,kind: WireColor, bare = false, connected = true) => `<path d="M${a.x} ${a.y} C${a.x} ${a.y+32} ${b.x-24} ${b.y} ${b.x} ${b.y}" fill="none" stroke="#151e23" stroke-width="7" opacity=".45"/><path d="M${a.x} ${a.y} C${a.x} ${a.y+32} ${b.x-24} ${b.y} ${b.x} ${b.y}" fill="none" stroke="${stroke(kind,bare)}" stroke-width="4" ${connected ? '' : 'stroke-dasharray="5 7" opacity=".4"'}/>`;
+  const feeds = box === 'switch' ? [{id:'feed.out',x:100},{id:'load.in',x:298}] : [{id:'load.out',x:94}];
+  const shell = box === 'switch' ? '<rect x="35" y="55" width="360" height="325" rx="8"/>' : '<path d="M70 55h218l47 47v224l-47 54H70l-40-54V102Z"/>';
+  const wiresInside = feeds.map(feed => `<rect x="${feed.x-18}" y="20" width="36" height="65" rx="4" fill="#ede4cd" stroke="#a99d81"/><rect x="${feed.x-27}" y="53" width="54" height="16" rx="3" fill="#aab5bb" stroke="#61727c"/><text x="${feed.x}" y="14" text-anchor="middle" class="inspection-label">${feed.id === 'feed.out' ? 'FROM PANEL' : feed.id === 'load.in' ? 'TO FIXTURE' : 'FROM SWITCH'}</text>${(['hot','neutral','ground'] as WireColor[]).map((kind,i) => line({x:feed.x-12+i*12,y:85},{x:feed.x-12+i*12,y:110},kind,kind==='ground')).join('')}`).join('');
+  const leads = layout.leads.filter(c => p[c.from] && p[c.to]).map(c => `<g><title>${c.label}${c.connected ? '' : ' · disconnected'}</title>${line(p[c.from]!,p[c.to]!,c.kind,c.bare,c.connected)}</g>`).join('');
+  const spliceWires = layout.splices.filter(s => s.box === box).map(s => s.members.map(member => {
+    // The cable end and splice end are two drawing locations for the same conductor end.
+    const original = feeds.find(f => member.startsWith(f.id));
+    if (!original) return '';
+    const kind = member.split('.').at(-1) as WireColor;
+    const i = ['hot','neutral','ground'].indexOf(kind);
+    const enabled = layout.cables.flatMap(c => c.conductors).find(c => c.from === member || c.to === member)?.connected ?? true;
+    return line({x:original.x-12+i*12,y:110},p[member]!,kind,kind==='ground',enabled);
+  }).join('')).join('');
+  const nuts = layout.splices.filter(s => s.box === box).map(s => {
+    const c = splicePoints[s.id]!, y = c.y-(s.connected ? 0 : 24);
+    return `<g data-splice-graphic="${s.id}"><title>${s.label} · ${s.connected ? 'connected' : 'open — separate conductor ends'}</title><path d="M${c.x-14} ${y}l6-28h16l6 28Z" fill="${s.connected ? '#e3a135' : '#b8bdbe'}" stroke="#775623" stroke-width="2"/><path d="M${c.x-5} ${y-22}l-3 17m12-17 3 17" stroke="#ffe0a0" stroke-width="2"/><ellipse cx="${c.x}" cy="${y}" rx="14" ry="3" fill="#6d4a24"/><text x="${c.x-15}" y="${c.y+27}" class="inspection-label">${s.id.includes('neutral') ? 'NEUTRAL' : s.id.includes('ground') ? 'GROUND' : 'SWITCHED HOT'}${s.connected ? '' : ' · OPEN'}</text></g>`;
+  }).join('');
+  const hardware = box === 'switch' ? `<path d="M195 120h40v23h12v152h21v23h-33v32h-40v-32h-12V143h12Z" fill="#b9c3c7" stroke="#697d86"/><rect x="193" y="148" width="45" height="143" rx="6" fill="#eee5cf" stroke="#a39b89"/><rect x="205" y="185" width="21" height="71" rx="3" fill="#5a584d"/><path d="M209 218l-2 ${switchOn ? -24 : 24}h17l-2 ${switchOn ? 24 : -24}Z" fill="#fff5da" stroke="#a89d81"/>${screw(215,131)}${screw(215,339)}<text x="150" y="156" class="inspection-label">BRASS A</text><text x="150" y="230" class="inspection-label">BRASS B</text><text x="252" y="285" class="inspection-label">GREEN / YOKE</text><text x="350" y="322" class="inspection-label">BOX BOND</text>`
+    : `<circle cx="455" cy="102" r="55" fill="#eee9d8" stroke="#b9b29e"/><circle cx="455" cy="102" r="29" fill="#8a887a"/><path d="M434 95h42m-42 10h42" stroke="#c4c0ab" stroke-width="4"/>${screw(411,102)}${screw(499,102)}<text x="455" y="32" text-anchor="middle" class="inspection-label">FIXTURE LIFTED FOR VIEW</text><text x="455" y="179" text-anchor="middle" class="inspection-label">BLACK / WHITE / GREEN LEADS</text><text x="293" y="322" class="inspection-label">BOX BOND</text>`;
+  const ends = box === 'switch' ? ['switch.a','switch.b','switch.ground','switch.box'] : ['light.box'];
+  const screws = ends.map(id => {const c=p[id]!,ground=id.includes('ground')||id.endsWith('.box');return `<circle cx="${c.x}" cy="${c.y}" r="9" fill="${ground ? '#4a8850' : '#d4ad55'}" stroke="${ground ? '#254b2d' : '#70521e'}"/><path d="M${c.x-5} ${c.y}h10m-5-3v6" stroke="${ground ? '#193d22' : '#6d4e16'}" stroke-width="1.5"/>`;}).join('');
+  return `<svg class="inspection-diagram" viewBox="0 0 ${box==='switch'?440:560} 420" role="img" aria-label="${box==='switch'?'Single-gang steel switch box with brass terminals, neutral pass-through, ground splice and separate device and box pigtails':'Octagonal steel fixture box with spliced fixture leads and separate metal-box grounding pigtail'}"><g fill="#52616a" stroke="#a1afb5" stroke-width="4">${shell}</g><g fill="none" stroke="#87979f" stroke-width="2"><circle cx="52" cy="215" r="12"/><circle cx="${box==='switch'?380:320}" cy="215" r="12"/></g>${wiresInside}${spliceWires}${leads}${hardware}${nuts}${screws}<text x="40" y="402" class="inspection-label">Sheath ends inside box · exposed conductors stay inside</text></svg>`;
+}
+function renderInspector() {
+  document.querySelectorAll<HTMLButtonElement>('[data-inspect]').forEach(button => button.setAttribute('aria-expanded',String(button.dataset.inspect === inspectedBox)));
+  const detail = document.querySelector('#box-detail')!;
+  const expanded = detail.querySelector<HTMLDetailsElement>('.conductor-details')?.open ?? false;
+  const focused = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
+  const focusKey = focused?.dataset.splice ? 'splice' : focused?.dataset.conductor ? 'conductor' : null;
+  const focusId = focusKey ? focused?.dataset[focusKey] : null;
+  if (!inspectedBox) {detail.innerHTML = '<p>Open a box view to inspect the mounting hardware and connections. Load the NM cable example to examine working splices.</p>';return;}
+  const box = inspectedBox, example = boxWiring ?? createNMExample();
+  detail.innerHTML = `<div class="inspection-content"><div>${boxDiagram(box,example)}</div><div class="inspection-notes"><h4>${box==='switch'?'Single-gang steel switch box':'Octagonal steel fixture box'}</h4><p>${box==='switch'?'Two brass screws carry line and switched hot. The green screw bonds the steel yoke. Silver mounting screws only fasten the device. Neutral passes through a wire nut without touching the switch. Incoming and outgoing black conductors terminate directly on brass screws; they do not need hot pigtails in this example.':'The fixture is lifted to reveal its black and white leads spliced to the cable conductors. Equipment ground bonds the fixture and steel box. The porcelain holder and its mounting screws do not substitute for that bond.'}</p><p>NM-B contains black, white and bare ground. The sheath enters through a cable clamp and ends inside the box. Short green leads are grounding pigtails.</p>${boxWiring ? '<p class="inspection-state">Working cable example · connections affect the circuit</p>' : '<p class="inspection-state">Reference cutaway · load the NM cable example to test these splices</p>'}
+    <div class="splice-controls">${example.splices.filter(s => s.box === box).map(s => `<div class="splice-row"><span><strong>${s.label}</strong><small>${s.members.length} conductor ends · ${s.connected?'connected':'open'}</small></span><button data-splice="${s.id}" ${!boxWiring||power?'disabled':''}>${s.connected?'Open':'Reconnect'} splice</button></div>`).join('')}</div>
+    ${boxWiring ? `<details class="conductor-details" ${expanded ? 'open' : ''}><summary>Inspect individual conductors &amp; leads</summary>${[...example.cables.flatMap(c => c.conductors),...example.leads].filter(c => box==='switch' ? c.id.startsWith('feed.')||c.id.startsWith('load.')||c.id.startsWith('switch-') : c.id.startsWith('load.')||c.id.startsWith('fixture-')).map(c => `<div class="splice-row"><span>${c.label}</span><button data-conductor="${c.id}" ${power?'disabled':''}>${c.connected?'Disconnect':'Reconnect'}</button></div>`).join('')}</details>` : ''}
+    </div></div>`;
+  if (focusKey && focusId) detail.querySelector<HTMLButtonElement>(`[data-${focusKey}="${focusId}"]`)?.focus();
+}
+
 function render() {
   const active = document.activeElement?.getAttribute('data-terminal');
-  const result = evaluateCircuit(wires, power, switchOn);
+  const result = currentResult();
   board.innerHTML = `<defs>
     <filter id="device-shadow" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="2" dy="6" stdDeviation="5" flood-color="#3c2e1d" flood-opacity=".21"/></filter>
     <filter id="label-shadow"><feDropShadow dx="0" dy="2" stdDeviation="1" flood-color="#665236" flood-opacity=".14"/></filter>
@@ -236,8 +317,9 @@ function render() {
   <path d="M14 35h872M14 595h872" stroke="#e5d4b2"/><text x="37" y="53" class="board-caption">OCW / RESIDENTIAL ELECTRICAL TRAINER</text><text x="858" y="53" text-anchor="end" class="board-caption">120V MODEL · POWER ${power ? 'ON' : 'OFF'}</text>
   ${screw(15,18)}${screw(885,18)}${screw(15,620)}${screw(885,620)}
   <text x="369" y="112" class="board-note">01 / SUPPLY → SWITCH → LOAD</text><text x="369" y="131" class="fine-label">Click terminal screws · mounting screws are not connections</text>
+  ${boxWiring ? cableGraphic() : ''}
   ${panelGraphic()}${switchGraphic()}${lightGraphic(result.lightOn)}
-  <g id="wires">${wires.map(w => {const d = routedWirePath(w);return `<g data-wire="${w.id}" class="wire-connection"><title>${names[w.color]} wire: ${terminals[w.from].label} to ${terminals[w.to].label}. Select to remove.</title><path d="${d}" fill="none" stroke="${selectedWire === w.id ? '#efad35' : '#73664d'}" stroke-opacity="${selectedWire === w.id ? 1 : .8}" stroke-width="${selectedWire === w.id ? 10 : 7}"/><path d="${d}" fill="none" stroke="${colors[w.color]}" stroke-width="5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="transparent" stroke-width="17" class="wire-hit"/></g>`;}).join('')}</g>
+  <g id="wires">${(boxWiring ? [] : wires).map(w => {const d = routedWirePath(w);return `<g data-wire="${w.id}" class="wire-connection"><title>${names[w.color]} wire: ${terminals[w.from].label} to ${terminals[w.to].label}. Select to remove.</title><path d="${d}" fill="none" stroke="${selectedWire === w.id ? '#efad35' : '#73664d'}" stroke-opacity="${selectedWire === w.id ? 1 : .8}" stroke-width="${selectedWire === w.id ? 10 : 7}"/><path d="${d}" fill="none" stroke="${colors[w.color]}" stroke-width="5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="transparent" stroke-width="17" class="wire-hit"/></g>`;}).join('')}</g>
   <path id="preview-wire" d="${selectedTerminal && ghost ? wirePath(point(selectedTerminal), ghost) : ''}" fill="none" stroke="${colors[selectedColor]}" stroke-width="4" stroke-dasharray="7 5" pointer-events="none"/>
   ${Object.keys(terminals).map(id => terminalGraphic(id as TerminalId)).join('')}<text x="369" y="608" class="fine-label">WIRE CROSSINGS ARE NOT JOINTS · CONNECTIONS OCCUR AT TERMINALS ONLY</text>`;
   if (active) board.querySelector<SVGGElement>(`[data-terminal="${active}"]`)?.focus();
@@ -248,10 +330,13 @@ function render() {
   powerButton.setAttribute('aria-pressed', String(power));
   powerButton.classList.toggle('on', power);
   powerButton.querySelector('span')!.textContent = `Turn power ${power ? 'off' : 'on'}`;
-  document.querySelector('#wire-count')!.textContent = String(wires.length);
-  document.querySelector('#wire-list')!.innerHTML = wires.length ? wires.map(w => `<div class="wire-row ${selectedWire === w.id ? 'selected-row' : ''}"><span class="wire-dot" style="background:${colors[w.color]}"></span><div><strong>${shortName(w.from)} → ${shortName(w.to)}</strong><small>${names[w.color]} wire</small></div><button data-remove="${w.id}" aria-label="Remove ${names[w.color].toLowerCase()} wire from ${terminals[w.from].label} to ${terminals[w.to].label}" ${power ? 'disabled' : ''}>×</button></div>`).join('') : '<p class="empty-wires">Your connections will appear here.</p>';
-  document.querySelector('#connection-prompt')!.textContent = power ? 'Power is on · turn it off before changing wires' : selectedTerminal ? `${shortName(selectedTerminal)} selected · choose the other end` : selectedWire ? 'Wire selected · press Delete or use × to remove' : `${names[selectedColor]} wire selected · choose a terminal`;
+  document.querySelector('#wire-count')!.textContent = String(boxWiring ? boxWiring.cables.length : wires.length);
+  document.querySelector('#wire-list')!.innerHTML = boxWiring ? '<p class="empty-wires">2 NM-B cables · black, white and bare ground.<br>Device leads, wire nuts and grounding pigtails are inside the boxes. Inspect a box to test each connection.</p>' : wires.length ? wires.map(w => `<div class="wire-row ${selectedWire === w.id ? 'selected-row' : ''}"><span class="wire-dot" style="background:${colors[w.color]}"></span><div><strong>${shortName(w.from)} → ${shortName(w.to)}</strong><small>${names[w.color]} wire</small></div><button data-remove="${w.id}" aria-label="Remove ${names[w.color].toLowerCase()} wire from ${terminals[w.from].label} to ${terminals[w.to].label}" ${power ? 'disabled' : ''}>×</button></div>`).join('') : '<p class="empty-wires">Your connections will appear here.</p>';
+  document.querySelector('#connection-prompt')!.textContent = power ? 'Power is on · turn it off before changing wires' : boxWiring ? 'NM cable example · inspect a box to test continuity' : selectedTerminal ? `${shortName(selectedTerminal)} selected · choose the other end` : selectedWire ? 'Wire selected · press Delete or use × to remove' : `${names[selectedColor]} wire selected · choose a terminal`;
   document.querySelector<HTMLButtonElement>('#cancel-wire')!.hidden = !selectedTerminal && !selectedWire;
+  document.querySelector('#terminal-mode')!.setAttribute('aria-pressed', String(!boxWiring));
+  document.querySelector('#nm-example')!.setAttribute('aria-pressed', String(!!boxWiring));
+  renderInspector();
   document.querySelectorAll<HTMLButtonElement>('[data-color]').forEach(el => {const active = el.dataset.color === selectedColor;el.classList.toggle('active', active);el.setAttribute('aria-pressed', String(active));});
 }
 function shortName(id: TerminalId): string {
@@ -268,7 +353,7 @@ function report(title: string, messages: string[], kind: 'info' | 'success' | 'e
   } else {const p = document.createElement('p');p.textContent = messages[0] ?? '';feedback.append(p);}
 }
 function reportCircuit() {
-  const result = evaluateCircuit(wires, power, switchOn);
+  const result = currentResult();
   if (result.valid) report('You’ve built a complete circuit!', [`Breaker 1 feeds the light through the switch. White returns to neutral; green bonds both devices. ${!power ? 'Turn power on, then toggle the switch.' : switchOn ? 'The closed switch completes the hot path: your light is on.' : 'The open switch interrupts the hot path: your light is off.'}`], 'success');
   else report('Let’s check these connections.', result.errors, 'error');
 }
@@ -278,6 +363,7 @@ function editingAllowed(): boolean {
 }
 function connect(from: TerminalId, to: TerminalId) {
   if (!editingAllowed()) return;
+  if (boxWiring) { report('Cable example active.', ['Use the box inspector to open or reconnect splices. Choose Terminal wiring to return to your click-to-connect exercise.']); return; }
   if (from === to) {selectedTerminal = null;ghost = null;render();return;}
   if (wires.some(w => (w.from === from && w.to === to) || (w.from === to && w.to === from))) {
     report('Those terminals are already connected.', ['Remove the existing wire first if you want to change its color.']);
@@ -289,6 +375,7 @@ function connect(from: TerminalId, to: TerminalId) {
 }
 function chooseTerminal(id: TerminalId) {
   if (!editingAllowed()) return;
+  if (boxWiring) { inspectedBox = terminals[id].component === 'light' ? 'light' : 'switch'; renderInspector(); report('Inspect the cable connections.', ['Use the inspector controls to open a splice or disconnect a conductor. Terminal wiring keeps your original click-to-connect exercise.']); return; }
   if (selectedTerminal) connect(selectedTerminal, id);
   else {selectedTerminal = id;selectedWire = null;render();}
 }
@@ -299,6 +386,7 @@ function toggleSwitch() {
 }
 function removeWire(id: number) {
   if (!editingAllowed()) return;
+  if (boxWiring) return;
   wires = wires.filter(w => w.id !== id);selectedWire = null;selectedTerminal = null;render();
   report('Wire removed.', ['Make a new connection or check the remaining circuit.']);
 }
@@ -361,9 +449,33 @@ document.querySelector('#wire-list')!.addEventListener('click', event => {const 
 document.querySelector('#cancel-wire')!.addEventListener('click', () => {selectedTerminal = null;selectedWire = null;ghost = null;render();});
 document.querySelector('#power')!.addEventListener('click', () => {
   if (power) {power = false;render();report('Power is off.', ['The circuit is de-energized. You can safely change your simulated wiring.']);return;}
-  const result = evaluateCircuit(wires);
+  const result = currentResult();
   if (!result.valid) {report('Power stays off. Fix the wiring first.', result.errors, 'error');return;}
   power = true;selectedTerminal = null;selectedWire = null;ghost = null;render();reportCircuit();
+});
+document.querySelector('#nm-example')!.addEventListener('click', () => {
+  if (!editingAllowed()) return;
+  boxWiring = createNMExample(); selectedTerminal = null; selectedWire = null; ghost = null;
+  inspectedBox = 'switch'; switchOn = false; render();
+  report('NM cable example loaded.', ['This is a complete reference circuit. Inspect a box, open a splice, then check wiring to see the interrupted path. Your terminal-wiring exercise is preserved.']);
+});
+document.querySelector('#terminal-mode')!.addEventListener('click', () => {
+  if (!editingAllowed()) return;
+  boxWiring = null; selectedTerminal = null; selectedWire = null; ghost = null; render();
+  report('Terminal wiring exercise.', ['Your click-to-connect wiring is restored. The box inspector remains available as a reference cutaway.']);
+});
+document.querySelector('.box-inspector')!.addEventListener('click', event => {
+  const target = event.target as Element;
+  const inspect = target.closest<HTMLButtonElement>('[data-inspect]');
+  if (inspect) {
+    const box = inspect.dataset.inspect as 'switch' | 'light';
+    inspectedBox = inspectedBox === box ? null : box; renderInspector(); return;
+  }
+  const splice = target.closest<HTMLButtonElement>('[data-splice]')?.dataset.splice;
+  const conductor = target.closest<HTMLButtonElement>('[data-conductor]')?.dataset.conductor;
+  if ((!splice && !conductor) || !boxWiring || !editingAllowed()) return;
+  const connection = splice ? boxWiring.splices.find(s => s.id === splice) : [...boxWiring.cables.flatMap(c => c.conductors), ...boxWiring.leads].find(c => c.id === conductor);
+  if (connection) {connection.connected = !connection.connected; render(); reportCircuit();}
 });
 document.querySelector('#check')!.addEventListener('click', reportCircuit);
 const hints = [
@@ -375,7 +487,7 @@ const hints = [
 ];
 document.querySelector('#hint')!.addEventListener('click', () => {report(`A little guidance · ${hintIndex+1} of ${hints.length}`, [hints[hintIndex]!]);hintIndex = (hintIndex+1) % hints.length;});
 document.querySelector('#reset')!.addEventListener('click', () => {
-  power = false;switchOn = false;wires = [];nextId = 1;selectedTerminal = null;selectedWire = null;selectedColor = 'hot';hintIndex = 0;ghost = null;gesture = null;
+  power = false;switchOn = false;boxWiring = null;inspectedBox = null;wires = [];nextId = 1;selectedTerminal = null;selectedWire = null;selectedColor = 'hot';hintIndex = 0;ghost = null;gesture = null;
   positions.switch = {...originalPositions.switch};positions.light = {...originalPositions.light};render();
   report('A fresh start.', ['Power is off and all wires are cleared. Start with the black hot path from Breaker 1.']);
 });

@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test tests/circuit.test.mjs",
+    "test": "node --test tests/*.test.mjs",
     "test:e2e": "playwright test"
   },
   "devDependencies": {
