@@ -30,3 +30,20 @@ body.workbench-page { margin:0; background:#edf0eb; color:#354038; font-family:s
 .wb-shell footer span { font-size:10px; color:#6a7863; }
 @media(max-width:650px) { .wb-header { padding:8px 10px; flex-wrap:wrap; gap:6px; }.wb-header h1 { font-size:18px; }.workbench-page button { padding:8px 11px; }.wb-header nav { gap:5px; }.wb-tray { width:140px; padding:8px; left:8px; top:8px; }.workbench-page .wb-part { width:65px; }.wb-part svg { height:85px; }.wb-empty { left:40%; right:5%; font-size:14px; }.wb-shell footer { padding:8px; }.wb-shell footer span { display:none; } }
 .wb-stage .hw-device-stamp,.wb-tray .hw-device-stamp { font:650 8px system-ui,sans-serif; fill:#777964; pointer-events:none; }
+.wb-tray:has([data-cable-tool]) { width:240px; }
+.wb-tray [aria-pressed="true"] { background:#e4eddc; border-color:#59854d; }
+.wb-entry,.wb-installed-cable,.wb-inspect-icon { cursor:pointer; outline:none; }
+.wb-entry:focus-visible circle,.wb-entry:hover circle { stroke:#3d772b; stroke-width:3; }
+.wb-installed-cable:focus-visible path:first-child { stroke:#a07b26; }
+.wb-cable-label { position:absolute; bottom:14px; left:14px; padding:9px 12px; background:#f0f3ea; border:1px solid #a9b69f; border-radius:4px; font-size:12px; max-width:85%; pointer-events:none; }
+.wb-inspection { width:min(1100px,95vw); max-height:94dvh; padding:0; border:1px solid #a9b69f; background:#fafbf6; }
+.wb-inspection::backdrop { background:#263321a8; }
+.wb-inspection header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 18px; background:#f0f3ea; }
+.wb-inspection h2 { font-size:20px; margin:0; }
+.wb-inspection-art { padding:16px; overflow-x:auto; }
+.wb-inspection-art svg { display:block; width:100%; min-width:620px; }
+.wb-inspection-art p { font-size:13px; line-height:1.8; }
+.wb-inspect-icon text { pointer-events:none; }
+@media(max-width:650px) { .wb-tray:has([data-cable-tool]) { width:210px; } }
+.wb-route-warning { font:700 12px system-ui,sans-serif; fill:#8d571e; pointer-events:none; }
+.wb-inspection .hw-device-stamp { font:650 8px system-ui,sans-serif; fill:#777964; }

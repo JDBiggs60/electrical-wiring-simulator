@@ -35,6 +35,18 @@ Undo/Redo treat each completed drag (including placement and snap together) as o
 
 `workbench-model.ts` owns component identities, parent relationships, world positions, snap targets and scene history independently of SVG rendering. `workbench.ts` translates pointer coordinates into bench space and commits drops to that model. This establishes the interaction boundary for future endpoint and terminal snapping without changing the electrical engine. Components remain within the bench; work lasts for the page session. Automated tests exercise model parenting/history, real mouse drags, visible snap feedback, assembly movement, actual Chromium touch events and toolbar taps.
 
+## Phase 3B cable installation
+
+Phase 3B continues the actual published Phase 3A source from `codex/phase-3a-workbench`, commit `94ae2b86162c7c94b475269a5ee5e823fb2bccb2`. Open `?view=cables` on the separate preview. `?view=workbench` keeps the Phase 3A experience; the default wiring lesson and prior views are preserved.
+
+1. Drag two steel boxes onto the bench. Each has an independent component ID. Switch mounting uses the existing drag-and-snap mechanism. Selecting a mounted switch or box exposes **Unmount switch**; it leaves the box and its cables intact.
+2. Select **14/2 NM-B** in the tray, then drag from a highlighted free side-wall knockout on the first box to a free knockout on the second. The snap radius is 38 pixels. Release when **Release to install** appears. Alternatively drag the cable tray item to the first entry, then select the destination; click-first/click-second and keyboard Enter on entry points also work. No connection button is needed.
+3. Move either box. Orthogonal routes with rounded stroke corners are recalculated around box footprints while endpoint IDs remain unchanged. An obstructed or clipped route displays a routing warning; attachments are retained. Each entry accepts one cable.
+4. Use the small inspection icon on a box, or select it and choose **Inspect box**. Inspection renders its actual installed cables at the same side entries, with matching black/white/bare conductor IDs and loose disconnected ends. A mounted switch is pulled forward for visibility with no terminal wiring.
+5. Click a cable to select it and see its ID, type and endpoint boxes. Delete removes that cable. Deleting a box removes its attached cables and mounted child together. Undo/Redo restore one completed placement, movement, mounting/unmounting, cable installation/removal, box deletion or Reset at a time. Escape or a background drop cancels an unfinished cable without creating an object. New committed actions clear Redo.
+
+`cable-workbench-model.ts` extends the original component model with real installed cable objects and endpoint/conductor identities; `cable-inspection.ts` reads that model directly. Both conductor termination records remain null. This phase does not introduce electrical splicing, terminal editing, power or further lessons. Tests exercise actual mouse/touch input, multiple boxes/cables, matching inspections, stable attachments during movement, deletion/history, cancellation, keyboard pairing, and the unchanged earlier lessons.
+
 ## Run locally
 
 Requires Node.js 24 or newer and npm. No backend, database, account, API key, or external font service is needed.
