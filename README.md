@@ -250,3 +250,11 @@ The existing `?view=cables` preview now has straight-on drawn-steel single-, dou
 `src/lampholder-art.ts` adds front/rear porcelain hardware; `src/wiring-hardware-art.ts` supplies shared orthographic steel-box projections. The nonmetallic lampholder has hot and neutral screws, with equipment grounding on the steel box separately. These terminals accept the existing real conductor connections; lamp illumination is not implemented in this graphics/placement phase. Cable entry capacity remains the current two modeled side knockouts per enclosure. Multi-device grounding pigtails can be created individually, but complete multi-gang lesson validation and box-fill sizing are future work.
 
 Try placing each rectangular box size, dropping switches and receptacles onto its mounting ears, then placing an octagon box and dropping the lampholder into it. Select NM-B and drag between green cable entries. Use the magnifier to inspect loose conductors and drag their ends to exposed screws. Move assemblies and try Undo/Redo, Unmount, Delete and Reset.
+
+### Front-facing inspection and guided grounding
+
+Switch and duplex-receptacle inspections now show recognizable front faces in a straight-on instructional projection, with their actual side screw IDs exposed. Connected leads use side approaches and upper/lower service loops instead of crossing the device face. Main-workbench connected conductors use the same routing logic. The porcelain lampholder's normal front view includes an installed unlit bulb; its terminal inspection stays unobstructed.
+
+`src/grounding-guide.ts` derives local splice, device-ground and box-bond indicators from the existing electrical connections and pigtail copper paths. These checks never create edges and distinguish local assembly from upstream supply continuity. Expand the grounding steps for the cable bare ends, separate device and steel-box pigtails, rated ground wire nut, green device screw and box bonding screw. Incoming/outgoing descriptions follow cable installation direction, not inferred energized current flow. All actions remain manual and use existing Undo/Redo.
+
+The front-facing projection exposes side screws for instruction; it is not a physical claim that those screws are on the front of a real device. Bulb energizing, complete multi-gang lesson validation and box-fill checks remain future work.

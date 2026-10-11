@@ -76,3 +76,13 @@ body.workbench-page { margin:0; background:#edf0eb; color:#354038; font-family:s
 .wb-tray:has([data-tray-part="box2"]) .wb-part:not(.wb-panel-part) svg { height:78px; }
 .wb-tray:has([data-tray-part="box2"]) { max-height:calc(100% - 48px); overflow-y:auto; }
 .wb-inspection:has([data-gang-count="2"]),.wb-inspection:has([data-gang-count="3"]) { width:min(1550px,97vw); }
+.wb-ground-guide { margin:0 0 8px; font-size:11px; line-height:1.5; }
+.wb-ground-progress { display:flex; flex-wrap:wrap; gap:5px 10px; align-items:center; }
+.wb-ground-progress span { border:1px solid #b5bca9; border-radius:4px; padding:3px 7px; background:#f4f3e9; }
+.wb-ground-progress [data-complete="true"] { background:#e3efda; color:#35582b; border-color:#859f75; }
+.wb-ground-progress small { color:#66745d; font-size:10px; }
+.wb-ground-guide summary { cursor:pointer; font-weight:600; padding:5px 0; color:#435c36; }
+.wb-ground-guide ol { margin:4px 0; padding-left:22px; }
+.wb-ground-guide li { margin:4px 0; }
+.wb-ground-guide p { margin:4px 0; font-size:11px; line-height:1.5; }
+[data-ground-end-label],[data-ground-origin-label],[data-ground-nut-label],[data-cable-direction] { fill:#526744; paint-order:stroke; stroke:#fafbf6; stroke-width:3px; }
