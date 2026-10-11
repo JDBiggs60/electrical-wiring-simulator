@@ -36,7 +36,7 @@ try {
   stage='multi-gang and ceiling fixture assembly';
   Object.assign(report,await checkHardwareExpansionMouse(page,`${base}?view=cables&revision=${revision}`));
   await mkdir('work/published-cable-check',{recursive:true});
-  await Promise.all(['lampholder-bulb-workbench.png','switch-grounding-loose.png','receptacle-grounding-loose.png','triple-gang-inspection.png','ceiling-fixture-inspection.png','neat-panel-routing.png','switch-box-wire-nuts.png','clear-switch-inspection.png','clear-receptacle-inspection.png'].map(name=>copyFile(`work/${name}`,`work/published-cable-check/${name}`)));
+  await Promise.all(['head-on-switch-workbench.png','head-on-receptacle-workbench.png','lampholder-bulb-workbench.png','switch-grounding-loose.png','receptacle-grounding-loose.png','triple-gang-inspection.png','ceiling-fixture-inspection.png','neat-panel-routing.png','switch-box-wire-nuts.png','clear-switch-inspection.png','clear-receptacle-inspection.png'].map(name=>copyFile(`work/${name}`,`work/published-cable-check/${name}`)));
   await page.screenshot({path:'work/published-cable-check/workbench.png',fullPage:true});
   await writeFile('work/published-cable-check/result.json',JSON.stringify({revision,...report},null,2));
   console.log(JSON.stringify(report));
