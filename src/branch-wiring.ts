@@ -109,5 +109,5 @@ export function removeWireNut(s:Workbench,id:string) {
 }
 export function moveWireNut(s:Workbench,id:string,x:number,y:number) {
  const c=s.connectors.find(c=>c.id===id);if(!c)return 'Select an installed wire nut.';
- c.x=Math.max(205,Math.min(410,x));c.y=Math.max(155,Math.min(480,y));return null;
+ c.x=Math.max(220,Math.min(390,x));c.y=Math.max(185,Math.min(500,y));return null;
 }

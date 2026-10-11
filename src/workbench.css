@@ -64,3 +64,9 @@ body.workbench-page { margin:0; background:#edf0eb; color:#354038; font-family:s
 [data-drag-end],[data-wiring-wire],[data-wire-target] { cursor:grab; }
 [data-inspection-device] { cursor:grab; }
 [data-branch-tester] { padding:10px; background:#eef2e8; }
+.wb-nut-tooltip { opacity:0; transition:opacity .12s; paint-order:stroke; stroke:#fafbf6; stroke-width:4px; }
+[data-wire-nut]:hover .wb-nut-tooltip,[data-wire-nut]:focus-visible .wb-nut-tooltip { opacity:1; }
+[data-wire-nut]:hover [data-hardware="wire-nut"] { filter:drop-shadow(0 0 3px #a78732); }
+.wb-inspection-art [data-inspection-projection] text { pointer-events:none; }
+.wb-inspection-art { overflow-x:hidden; }
+.wb-inspection-art [data-wiring-canvas] { min-width:0; }
