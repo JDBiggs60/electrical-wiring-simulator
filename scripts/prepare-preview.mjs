@@ -44,8 +44,29 @@ if (!archive) {
   const downloadDir = join(tmpdir(), 'ocw-production-pages');
   await rm(downloadDir, { recursive: true, force: true });
   await mkdir(downloadDir, { recursive: true });
-  gh(['run', 'download', productionRun, '--repo', repo, '--name', 'github-pages', '--dir', downloadDir]);
-  archive = join(downloadDir, 'artifact.tar');
+  try {
+    gh(['run', 'download', productionRun, '--repo', repo, '--name', 'github-pages', '--dir', downloadDir]);
+    archive = join(downloadDir, 'artifact.tar');
+  } catch {
+    // Pages artifacts expire after one day. Successful preview deployments
+    // retain the original production bytes plus their verified hash manifest.
+    // Recover those bytes, never rebuild production or adopt a new baseline.
+    const runs = gh(['api', `repos/${repo}/actions/workflows/pages.yml/runs?branch=codex%2Ftraining-board-preview&event=workflow_dispatch&status=success&per_page=20`, '--jq', '.workflow_runs[].id']).split('\n').filter(Boolean);
+    let recovered = false;
+    for (const run of runs) {
+      const available = gh(['api', `repos/${repo}/actions/runs/${run}/artifacts`, '--jq', '[.artifacts[] | select(.name == "github-pages" and .expired == false)] | length']);
+      if (available === '0') continue;
+      await rm(downloadDir, { recursive: true, force: true });
+      await mkdir(downloadDir, { recursive: true });
+      gh(['run', 'download', run, '--repo', repo, '--name', 'github-pages', '--dir', downloadDir]);
+      archive = join(downloadDir, 'production-recovered.tar');
+      execFileSync('python3', [resolve('scripts/recover-production.py'), join(downloadDir, 'artifact.tar'), archive, productionCommit, productionRun]);
+      console.log(`Recovered the exact production baseline from verified preview run ${run}.`);
+      recovered = true;
+      break;
+    }
+    if (!recovered) throw new Error('No retained, verified production archive is available. Refusing to deploy.');
+  }
 }
 await rm(site, { recursive: true, force: true });
 await mkdir(site, { recursive: true });
