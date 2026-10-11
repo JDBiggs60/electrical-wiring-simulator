@@ -14,13 +14,14 @@ export interface ReceptacleHardware {
 // Future direct-drag wiring will add graph edges between these stable node IDs.
 export interface ElectricalConnection { id: string; fromId: string; toId: string }
 export interface GroundPigtail { id:string; boxId:string; role:'device'|'box'; ends: {id:string;boxId:string;kind:'bare';termination:string|null}[] }
-export interface GroundConnector {id:string;boxId:string;capacity:4}
-export interface Workbench { components: Component[]; nextId: number; connections: ElectricalConnection[]; pigtails:GroundPigtail[]; connectors:GroundConnector[]; nextWiringId:number; power:boolean }
+export interface WireNutConnector {id:string;boxId:string;capacity:3|4;kind:'hot'|'neutral'|'ground';endIds:string[];x:number;y:number}
+export interface SpliceGroup {id:string;boxId:string;kind:'hot'|'neutral'|'ground';endIds:string[];x:number;y:number}
+export interface Workbench { components: Component[]; nextId: number; connections: ElectricalConnection[]; pigtails:GroundPigtail[]; connectors:WireNutConnector[]; spliceGroups:SpliceGroup[]; nextWiringId:number; power:boolean }
 export const partSize = { box: { width: 172, height: 282 }, switch: { width: 108, height: 302 }, receptacle: { width: 108, height: 302 }, panel: { width: 260, height: 420 } };
 // Align the preserved illustrations' top and bottom mounting centers at one
 // uniform scale. Mounted coordinates are local to the parent component.
 export const mountOffset = { x: 35, y: -6 };
-export function createWorkbench(): Workbench { return { components: [], nextId: 1, connections: [], pigtails:[], connectors:[],nextWiringId:1,power:false }; }
+export function createWorkbench(): Workbench { return { components: [], nextId: 1, connections: [], pigtails:[], connectors:[],spliceGroups:[],nextWiringId:1,power:false }; }
 export function addPart(state: Workbench, kind: PartKind, x: number, y: number) {
   const part: Component = { id: `part-${state.nextId++}`, kind, x, y, parentId: null, terminals: [] };
   if (kind === 'receptacle') {

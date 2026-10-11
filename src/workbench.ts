@@ -173,7 +173,7 @@ export function mountWorkbench(cableMode = false) {
     pending=null;cableTool=false;
     if (name === 'undo' || name === 'redo') history[name]();
     else if (name === 'delete' && selected) { const before = structuredClone(state); deletePart(state,selected); history.record(before); }
-    else if (name === 'reset') { const before = structuredClone(state); state.components = []; state.cables=[]; state.connections=[]; state.pigtails=[];state.connectors=[];state.power=false; history.record(before); }
+    else if (name === 'reset') { const before = structuredClone(state); state.components = []; state.cables=[]; state.connections=[]; state.pigtails=[];state.connectors=[];state.spliceGroups=[];state.power=false; history.record(before); }
     pruneWiring(state);
     selected = null; status.textContent = `${name === 'reset' ? 'Workbench cleared. Undo restores your assembly.' : name === 'delete' ? 'Selected part deleted.' : name === 'undo' ? 'Last assembly action undone.' : 'Assembly action restored.'}`; render();
   }

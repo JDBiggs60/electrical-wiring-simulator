@@ -1,7 +1,8 @@
+import { checkWireNutMouse } from './wire-nut-browser-check.mjs';
 import { checkReceptacleWiringMouse } from './receptacle-wiring-browser-check.mjs';
 import { checkPanelMouse } from './panel-browser-check.mjs';
 import { chromium } from '@playwright/test';
-import { mkdir,writeFile } from 'node:fs/promises';
+import { mkdir,writeFile,copyFile } from 'node:fs/promises';
 import { checkCableMouse, checkReceptacleMouse } from './cable-browser-check.mjs';
 const base='https://jdbiggs60.github.io/electrical-wiring-simulator/preview/';
 const browser=await chromium.launch();
@@ -19,7 +20,9 @@ try {
   Object.assign(report,await checkReceptacleMouse(page));
   Object.assign(report,await checkPanelMouse(page,`${base}?view=cables&revision=${revision}`));
   Object.assign(report,await checkReceptacleWiringMouse(page,`${base}?view=cables&revision=${revision}`));
+  Object.assign(report,await checkWireNutMouse(page,`${base}?view=cables&revision=${revision}`));
   await mkdir('work/published-cable-check',{recursive:true});
+  await Promise.all(['neat-panel-routing.png','switch-box-wire-nuts.png'].map(name=>copyFile(`work/${name}`,`work/published-cable-check/${name}`)));
   await page.screenshot({path:'work/published-cable-check/workbench.png',fullPage:true});
   await writeFile('work/published-cable-check/result.json',JSON.stringify({revision,...report},null,2));
   console.log(JSON.stringify(report));
