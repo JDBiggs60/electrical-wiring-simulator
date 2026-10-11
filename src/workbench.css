@@ -1,0 +1,32 @@
+body.workbench-page { margin:0; background:#edf0eb; color:#354038; font-family:system-ui,sans-serif; }
+.wb-shell { height:100dvh; display:flex; flex-direction:column; }
+.wb-header { display:flex; justify-content:space-between; align-items:center; gap:15px; padding:12px 18px; background:#f8f9f5; border-bottom:1px solid #b4bfb0; }
+.wb-header span { font:700 10px ui-monospace,monospace; letter-spacing:1px; }
+.wb-header h1 { font-size:22px; margin:4px 0 0; }
+.wb-header nav { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
+.workbench-page button { border:1px solid #a3b39c; border-radius:4px; padding:10px 14px; background:#fff; color:#354b30; font:600 13px system-ui,sans-serif; cursor:pointer; }
+.workbench-page button:disabled { opacity:.45; cursor:default; }
+.workbench-page button:focus-visible,.wb-tray summary:focus-visible { outline:3px solid #a07b26; outline-offset:2px; }
+.wb-header a { color:#4c6544; font-size:12px; padding:8px; }
+.wb-stage { position:relative; flex:1; min-height:360px; overflow:hidden; background:#fafbf6; }
+#wb-canvas { width:100%; height:100%; display:block; position:absolute; inset:0; touch-action:none; }
+.wb-tray { position:absolute; left:14px; top:14px; width:174px; padding:10px; border:1px solid #a9b69f; border-radius:6px; background:#f0f3ea; }
+.wb-tray summary { cursor:pointer; font-weight:700; font-size:13px; }
+.wb-tray p { font-size:11px; margin:8px 0; }
+.wb-tray > div { display:flex; gap:6px; }
+.workbench-page .wb-part { width:80px; padding:6px 3px; touch-action:none; cursor:grab; }
+.wb-part svg { display:block; height:110px; width:100%; pointer-events:none; }
+.wb-part span { font-size:10px; pointer-events:none; }
+.wb-component { cursor:grab; outline:none; touch-action:none; }
+.wb-component:active { cursor:grabbing; }
+.wb-selected { fill:none; stroke:#9a7a26; stroke-width:2; pointer-events:none; stroke-dasharray:5 4; }
+.wb-component:focus-visible > rect:first-child { stroke:#9a7a26; stroke-width:2; }
+.wb-snap { fill:#d8ecd433; stroke:#487a39; stroke-width:3; stroke-dasharray:8 5; }
+.wb-snap-label { font:700 14px system-ui,sans-serif; fill:#3e6b32; }
+.wb-empty { position:absolute; top:48%; left:25%; right:12%; text-align:center; font-size:18px; color:#7a8574; pointer-events:none; }
+.wb-empty[hidden] { display:none; }
+.wb-shell footer { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 18px; background:#f0f3ea; border-top:1px solid #b4bfb0; font-size:12px; }
+.wb-shell footer p { margin:0; }
+.wb-shell footer span { font-size:10px; color:#6a7863; }
+@media(max-width:650px) { .wb-header { padding:8px 10px; flex-wrap:wrap; gap:6px; }.wb-header h1 { font-size:18px; }.workbench-page button { padding:8px 11px; }.wb-header nav { gap:5px; }.wb-tray { width:140px; padding:8px; left:8px; top:8px; }.workbench-page .wb-part { width:65px; }.wb-part svg { height:85px; }.wb-empty { left:40%; right:5%; font-size:14px; }.wb-shell footer { padding:8px; }.wb-shell footer span { display:none; } }
+.wb-stage .hw-device-stamp,.wb-tray .hw-device-stamp { font:650 8px system-ui,sans-serif; fill:#777964; pointer-events:none; }

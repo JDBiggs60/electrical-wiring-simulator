@@ -25,6 +25,16 @@ Undo and Redo are beside the box connection controls and in the main installatio
 
 The grounding guide lists the bare cable conductors, explains the difference between each pigtail's splice end and terminal end, and identifies missing pigtails. Add both pigtails manually, select their splice ends along with the cable grounds, then join them. The virtual connector accepts two to four ends; the switch ground splice uses four and the fixture ground splice uses three. Complete the device and box bonds separately. The splice indicator checks actual connector membership; device and box indicators check continuity back to supply ground. No grounding connection is automatic.
 
+## Phase 3A drag-and-snap prototype
+
+Open `?view=workbench` on the separate preview. The default interactive wiring lesson and every earlier view remain available. This prototype stops at mechanical assembly: no cables, conductors or wiring controls have been added.
+
+Drag the steel box from the small collapsible tray into the empty full-height bench. Move the box by dragging it. Drag a toggle switch from the tray toward the box's center; a green outline says **Release to mount**. Dropping there establishes a parent/child relationship with local mounting coordinates. The original SVG artwork is reused at uniform scales that align the mounting centers. Each component has its own unique identity. Drag either the box or mounted switch to move the assembled unit.
+
+Undo/Redo treat each completed drag (including placement and snap together) as one action. They also restore Delete and Reset. Ctrl+Z and Ctrl+Y/Ctrl+Shift+Z work; Escape cancels an active drag. Delete removes the selected part; deleting a box removes its mounted child too. Clicking a part selects it without requiring a list. A new committed action clears Redo. All controls and drags support mouse and touch through Pointer Events; cancelled gestures restore the previous component model.
+
+`workbench-model.ts` owns component identities, parent relationships, world positions, snap targets and scene history independently of SVG rendering. `workbench.ts` translates pointer coordinates into bench space and commits drops to that model. This establishes the interaction boundary for future endpoint and terminal snapping without changing the electrical engine. Components remain within the bench; work lasts for the page session. Automated tests exercise model parenting/history, real mouse drags, visible snap feedback, assembly movement, actual Chromium touch events and toolbar taps.
+
 ## Run locally
 
 Requires Node.js 24 or newer and npm. No backend, database, account, API key, or external font service is needed.
