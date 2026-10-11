@@ -1,3 +1,4 @@
+import { checkPanelMouse } from './panel-browser-check.mjs';
 import { chromium } from '@playwright/test';
 import { mkdir,writeFile } from 'node:fs/promises';
 import { checkCableMouse, checkReceptacleMouse } from './cable-browser-check.mjs';
@@ -15,6 +16,7 @@ try {
   if(!fresh) throw new Error('Published preview has not reached the deployed revision');
   const report=await checkCableMouse(page,`${base}?view=cables&revision=${revision}`);
   Object.assign(report,await checkReceptacleMouse(page));
+  Object.assign(report,await checkPanelMouse(page,`${base}?view=cables&revision=${revision}`));
   await mkdir('work/published-cable-check',{recursive:true});
   await page.screenshot({path:'work/published-cable-check/workbench.png',fullPage:true});
   await writeFile('work/published-cable-check/result.json',JSON.stringify({revision,...report},null,2));

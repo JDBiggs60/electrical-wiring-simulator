@@ -53,3 +53,7 @@ body.workbench-page { margin:0; background:#edf0eb; color:#354038; font-family:s
 .wb-entry-label { font:600 12px system-ui,sans-serif; fill:#3e692d; pointer-events:none; paint-order:stroke; stroke:#fafbf6; stroke-width:3px; }
 @media(max-width:650px) { .wb-cable-guide { top:auto; right:8px; bottom:8px; max-width:60%; font-size:11px; padding:7px 9px; } }
 .wb-tray:has([data-tray-part="receptacle"]) { width:308px; }
+.workbench-page .wb-panel-part { margin-top:8px; width:100%; display:flex; align-items:center; gap:12px; text-align:left; }
+.wb-panel-part svg { width:44px; height:70px; }
+.wb-panel-part span { font-size:12px; }
+.wb-panel-part small { display:block; font-size:10px; margin-top:5px; font-weight:400; }

@@ -1,4 +1,4 @@
-import { createWorkbench as baseCreate, deletePart as baseDelete, worldPosition, type Component, type Workbench as BaseWorkbench } from './workbench-model.ts';
+import { createWorkbench as baseCreate, deletePart as baseDelete, worldPosition, partSize, type Component, type Workbench as BaseWorkbench } from './workbench-model.ts';
 export { addPart, mountOffset, mountSwitch, partSize, snapTarget, workbenchHistory, worldPosition } from './workbench-model.ts';
 export type { PartKind } from './workbench-model.ts';
 export type EntryId = 'left' | 'right';
@@ -7,11 +7,14 @@ export interface CableConductor { id: string; kind: 'black' | 'white' | 'bare'; 
 export interface InstalledCable { id: string; type: '14/2 NM-B with ground'; from: CableEnd; to: CableEnd; conductors: CableConductor[] }
 export interface Workbench extends BaseWorkbench { cables: InstalledCable[]; nextCableId: number }
 export const entries = { left: { x:25.35, y:108.55, side:-1 }, right: { x:146.9, y:162.5, side:1 } } as const;
+export const panelEntries = { left: {x:0,y:225,side:-1}, right:{x:260,y:275,side:1} } as const;
+export const isEnclosure = (p:Component) => p.kind === 'box' || p.kind === 'panel';
+export const entriesFor = (p:Component) => p.kind === 'panel' ? panelEntries : entries;
 export function createWorkbench(): Workbench { return { ...baseCreate(), cables: [], nextCableId:1 }; }
 export function entryPosition(state: Workbench, end: CableEnd) {
-  const box = state.components.find(p => p.id === end.boxId && p.kind === 'box');
+  const box = state.components.find(p => p.id === end.boxId && isEnclosure(p));
   if (!box) return null;
-  const p = worldPosition(state,box), entry = entries[end.entryId];
+  const p = worldPosition(state,box), entry = entriesFor(box)[end.entryId];
   return { x:p.x+entry.x, y:p.y+entry.y, side:entry.side };
 }
 export function entryFree(state: Workbench, end: CableEnd) {
@@ -19,7 +22,7 @@ export function entryFree(state: Workbench, end: CableEnd) {
 }
 export function nearestEntry(state: Workbench, point: {x:number;y:number}, source?: CableEnd): CableEnd | null {
   let best: CableEnd | null = null, distance = 38;
-  for (const box of state.components.filter(p => p.kind === 'box' && p.id !== source?.boxId)) for (const entryId of ['left','right'] as EntryId[]) {
+  for (const box of state.components.filter(p => isEnclosure(p) && p.id !== source?.boxId)) for (const entryId of ['left','right'] as EntryId[]) {
     const end = {boxId:box.id,entryId}, p = entryPosition(state,end)!;
     const d = Math.hypot(p.x-point.x,p.y-point.y);
     if (d < distance && entryFree(state,end)) { distance = d; best = end; }
@@ -27,7 +30,7 @@ export function nearestEntry(state: Workbench, point: {x:number;y:number}, sourc
   return best;
 }
 export function installCable(state: Workbench, from: CableEnd, to: CableEnd): string | null {
-  if (from.boxId === to.boxId || !entryFree(state,from) || !entryFree(state,to)) return 'Choose free knockout entries on two different boxes.';
+  if (from.boxId === to.boxId || !entryFree(state,from) || !entryFree(state,to)) return 'Choose free knockout entries on two different boxes or panels.';
   const id = `cable-${state.nextCableId++}`;
   state.cables.push({id,type:'14/2 NM-B with ground',from:{...from},to:{...to},conductors:(['black','white','bare'] as const).map(kind => ({id:`${id}.${kind}`,kind,ends:[{...from,id:`${id}.${kind}.from`,termination:null},{...to,id:`${id}.${kind}.to`,termination:null}]}))});
   return null;
@@ -47,7 +50,7 @@ export function inspectBox(state: Workbench,boxId:string) {
 }
 export function cableRoute(state: Workbench,cable: InstalledCable) {
   const a = entryPosition(state,cable.from)!, b = entryPosition(state,cable.to)!;
-  const obstacles = state.components.filter(p => !p.parentId).map(p => ({ x:p.x-12,y:p.y-12,right:p.x+(p.kind === 'box' ? 172 : 108)+12,bottom:p.y+(p.kind === 'box' ? 282 : 302)+12 }));
+  const obstacles = state.components.filter(p => !p.parentId).map(p => ({ x:p.x-12,y:p.y-12,right:p.x+partSize[p.kind].width+12,bottom:p.y+partSize[p.kind].height+12 }));
   const xs = [...new Set([a.x+a.side*52,b.x+b.side*52,...obstacles.flatMap(o => [o.x-24,o.right+24])])].sort((x,y)=>x-y);
   const ys = [...new Set([a.y,b.y,...obstacles.flatMap(o => [o.y-32,o.bottom+32])])].sort((x,y)=>x-y);
   const blocked = (x:number,y:number) => obstacles.some(o => x>o.x && x<o.right && y>o.y && y<o.bottom);
@@ -74,3 +77,9 @@ export function cableRoute(state: Workbench,cable: InstalledCable) {
 }
 
 export const unmountSwitch = unmountDevice;
+
+/** One node registry for the next conductor-to-terminal wiring phase. No edges
+ * or terminations are created by component placement or cable installation. */
+export function electricalNodes(state:Workbench) {
+  return [...state.components.flatMap(p=>p.terminals.map(t=>({...t,nodeType:'terminal' as const}))),...state.cables.flatMap(c=>c.conductors.flatMap(w=>w.ends.map(e=>({...e,conductorId:w.id,kind:w.kind,componentId:e.boxId,nodeType:'conductor-end' as const}))))];
+}

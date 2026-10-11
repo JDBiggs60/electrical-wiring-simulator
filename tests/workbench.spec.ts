@@ -80,7 +80,11 @@ test('real touch events place, mount and move components on a narrow workbench',
   const traySwitch = (await page.locator('[data-tray-part="switch"]').boundingBox())!;
   await touchDrag({x:traySwitch.x+traySwitch.width/2,y:traySwitch.y+traySwitch.height/2},{x:board.x+x+89,y:board.y+y+145});
   await expect(page.locator('[data-kind="switch"]')).toHaveAttribute('data-parent','part-1');
-  const sw = (await page.locator('[data-kind="switch"]').boundingBox())!;
+  // An SVG redraw can detach the queried element between protocol requests.
+  // Retry only the geometry observation; keep the actual touch drag assertions.
+  let switchBounds = await page.locator('[data-kind="switch"]').boundingBox();
+  await expect.poll(async () => { switchBounds = await page.locator('[data-kind="switch"]').boundingBox(); return switchBounds !== null; }).toBe(true);
+  const sw = switchBounds!;
   await touchDrag({x:sw.x+sw.width/2,y:sw.y+sw.height/2},{x:sw.x+sw.width/2-40,y:sw.y+sw.height/2+80});
   await expect(box).toHaveAttribute('data-x',String(x-40));
   await expect(page.locator('[data-kind="switch"]')).toHaveAttribute('data-x',String(x-5));
