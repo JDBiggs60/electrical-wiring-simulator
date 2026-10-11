@@ -38,3 +38,11 @@ export async function checkCableMouse(page,url) {
   expect(errors).toEqual([]);
   return {url:page.url(),mouseTrayDrag:true,mouseDraftPickup:true,highlightedEntries:true,mouseCableSnap:true,bothBoxRoutesUpdated:true,sharedInspection:true,runtimeErrors:errors};
 }
+export async function checkReceptacleMouse(page) {
+  const box=await page.locator('[data-component="part-1"]').boundingBox(),tray=await page.locator('[data-tray-part="receptacle"]').boundingBox();
+  await page.mouse.move(tray.x+tray.width/2,tray.y+tray.height/2);await page.mouse.down();await page.mouse.move(box.x+89,box.y+139,{steps:12});await expect(page.locator('[data-snap-target="part-1"]')).toBeVisible();await page.mouse.up();
+  const device=page.locator('[data-kind="receptacle"]');await expect(device).toHaveAttribute('data-parent','part-1');await expect(device.locator('[data-terminal-state="disconnected"]')).toHaveCount(5);await expect(device.locator('[data-tab-intact="true"]')).toHaveCount(2);
+  await page.getByRole('button',{name:'Unmount receptacle',exact:true}).click();await expect(device).toHaveAttribute('data-parent','');await page.getByRole('button',{name:'Undo',exact:true}).click();await expect(device).toHaveAttribute('data-parent','part-1');await expect(page.locator('[data-installed-cable="cable-1"]')).toHaveCount(1);
+  await page.locator('[data-inspect-box="part-1"]').click();await expect(page.getByRole('dialog').locator('[data-hardware="duplex-receptacle"]')).toHaveCount(1);await expect(page.locator('[data-inspect-cable="cable-1"]')).toHaveCount(1);await page.getByRole('button',{name:'Return to workbench',exact:true}).click();
+  return {receptacleMouseSnap:true,receptacleUnmountUndo:true,receptacleCableInspection:true};
+}

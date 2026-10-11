@@ -1,6 +1,6 @@
 import { chromium } from '@playwright/test';
 import { mkdir,writeFile } from 'node:fs/promises';
-import { checkCableMouse } from './cable-browser-check.mjs';
+import { checkCableMouse, checkReceptacleMouse } from './cable-browser-check.mjs';
 const base='https://jdbiggs60.github.io/electrical-wiring-simulator/preview/';
 const browser=await chromium.launch();
 try {
@@ -14,6 +14,7 @@ try {
   }
   if(!fresh) throw new Error('Published preview has not reached the deployed revision');
   const report=await checkCableMouse(page,`${base}?view=cables&revision=${revision}`);
+  Object.assign(report,await checkReceptacleMouse(page));
   await mkdir('work/published-cable-check',{recursive:true});
   await page.screenshot({path:'work/published-cable-check/workbench.png',fullPage:true});
   await writeFile('work/published-cable-check/result.json',JSON.stringify({revision,...report},null,2));

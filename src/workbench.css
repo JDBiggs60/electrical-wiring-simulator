@@ -52,3 +52,4 @@ body.workbench-page { margin:0; background:#edf0eb; color:#354038; font-family:s
 .wb-cable-draft:focus-visible path:first-child { stroke:#a07b26; }
 .wb-entry-label { font:600 12px system-ui,sans-serif; fill:#3e692d; pointer-events:none; paint-order:stroke; stroke:#fafbf6; stroke-width:3px; }
 @media(max-width:650px) { .wb-cable-guide { top:auto; right:8px; bottom:8px; max-width:60%; font-size:11px; padding:7px 9px; } }
+.wb-tray:has([data-tray-part="receptacle"]) { width:308px; }

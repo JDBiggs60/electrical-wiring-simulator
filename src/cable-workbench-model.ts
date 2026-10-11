@@ -36,7 +36,7 @@ export function deletePart(state: Workbench,id:string) {
   baseDelete(state,id);
   state.cables = state.cables.filter(c => c.id !== id && state.components.some(p => p.id === c.from.boxId) && state.components.some(p => p.id === c.to.boxId));
 }
-export function unmountSwitch(state: Workbench, part: Component) {
+export function unmountDevice(state: Workbench, part: Component) {
   if (!part.parentId) return false;
   const p = worldPosition(state,part); part.parentId = null; part.x = p.x+185; part.y = p.y; return true;
 }
@@ -72,3 +72,5 @@ export function cableRoute(state: Workbench,cable: InstalledCable) {
   const points = issue ? [a,{x:a.x+a.side*52,y:a.y},{x:b.x+b.side*52,y:b.y},b] : [a,...route,b];
   return { path:'M'+points.map(p=>`${p.x} ${p.y}`).join('L'), issue, points };
 }
+
+export const unmountSwitch = unmountDevice;
