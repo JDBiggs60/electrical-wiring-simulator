@@ -1,3 +1,4 @@
+import {checkHardwareExpansionMouse} from './hardware-expansion-browser-check.mjs';
 import { checkClearInspectionMouse } from './clear-inspection-browser-check.mjs';
 import { checkWireNutMouse } from './wire-nut-browser-check.mjs';
 import { checkReceptacleWiringMouse } from './receptacle-wiring-browser-check.mjs';
@@ -32,8 +33,10 @@ try {
   Object.assign(report,await checkClearInspectionMouse(page,`${base}?view=cables&revision=${revision}`,'switch'));
   stage='clear receptacle inspection';
   Object.assign(report,await checkClearInspectionMouse(page,`${base}?view=cables&revision=${revision}`,'receptacle'));
+  stage='multi-gang and ceiling fixture assembly';
+  Object.assign(report,await checkHardwareExpansionMouse(page,`${base}?view=cables&revision=${revision}`));
   await mkdir('work/published-cable-check',{recursive:true});
-  await Promise.all(['neat-panel-routing.png','switch-box-wire-nuts.png','clear-switch-inspection.png','clear-receptacle-inspection.png'].map(name=>copyFile(`work/${name}`,`work/published-cable-check/${name}`)));
+  await Promise.all(['triple-gang-inspection.png','ceiling-fixture-inspection.png','neat-panel-routing.png','switch-box-wire-nuts.png','clear-switch-inspection.png','clear-receptacle-inspection.png'].map(name=>copyFile(`work/${name}`,`work/published-cable-check/${name}`)));
   await page.screenshot({path:'work/published-cable-check/workbench.png',fullPage:true});
   await writeFile('work/published-cable-check/result.json',JSON.stringify({revision,...report},null,2));
   console.log(JSON.stringify(report));

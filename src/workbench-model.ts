@@ -1,5 +1,5 @@
-export type PartKind = 'box' | 'switch' | 'receptacle' | 'panel';
-export interface Component { id: string; kind: PartKind; x: number; y: number; parentId: string | null; receptacle?: ReceptacleHardware; terminals: BranchTerminal[]; panel?: PanelHardware; pulledOut?: boolean }
+export type PartKind = 'box' | 'box2' | 'box3' | 'ceiling' | 'lampholder' | 'switch' | 'receptacle' | 'panel';
+export interface Component { id: string; kind: PartKind; x: number; y: number; parentId: string | null; receptacle?: ReceptacleHardware; terminals: BranchTerminal[]; panel?: PanelHardware; slot?: number; pulledOut?: boolean }
 export interface BranchTerminal { id: string; componentId: string; kind: 'hot' | 'neutral' | 'ground'; x: number; y: number; termination: string | null }
 export interface PanelHardware {
   designation: 'subpanel'; neutralIsolated: true; groundBarBondedToEnclosure: true;
@@ -13,11 +13,11 @@ export interface ReceptacleHardware {
 }
 // Future direct-drag wiring will add graph edges between these stable node IDs.
 export interface ElectricalConnection { id: string; fromId: string; toId: string }
-export interface GroundPigtail { id:string; boxId:string; role:'device'|'box'; ends: {id:string;boxId:string;kind:'bare';termination:string|null}[] }
+export interface GroundPigtail { id:string; boxId:string; deviceId?:string; role:'device'|'box'; ends: {id:string;boxId:string;kind:'bare';termination:string|null}[] }
 export interface WireNutConnector {id:string;boxId:string;capacity:3|4;kind:'hot'|'neutral'|'ground';endIds:string[];x:number;y:number}
 export interface SpliceGroup {id:string;boxId:string;kind:'hot'|'neutral'|'ground';endIds:string[];x:number;y:number}
 export interface Workbench { components: Component[]; nextId: number; connections: ElectricalConnection[]; pigtails:GroundPigtail[]; connectors:WireNutConnector[]; spliceGroups:SpliceGroup[]; nextWiringId:number; power:boolean }
-export const partSize = { box: { width: 172, height: 282 }, switch: { width: 108, height: 302 }, receptacle: { width: 108, height: 302 }, panel: { width: 260, height: 420 } };
+export const partSize = { box: { width: 172, height: 282 }, box2: { width: 292, height: 282 }, box3: { width: 412, height: 282 }, ceiling: { width: 220, height: 220 }, lampholder: { width: 190, height: 190 }, switch: { width: 108, height: 302 }, receptacle: { width: 108, height: 302 }, panel: { width: 260, height: 420 } };
 // Align the preserved illustrations' top and bottom mounting centers at one
 // uniform scale. Mounted coordinates are local to the parent component.
 export const mountOffset = { x: 35, y: -6 };
@@ -30,7 +30,8 @@ export function addPart(state: Workbench, kind: PartKind, x: number, y: number) 
       tabs: (['hot','neutral'] as const).map(kind => ({id:`${part.id}.${kind}.tab`,kind,terminalIds:[`${part.id}.${kind}.upper`,`${part.id}.${kind}.lower`],intact:true})) };
   }
   const terminal=(name:string,kind:BranchTerminal['kind'],x:number,y:number):BranchTerminal => ({id:`${part.id}.${name}`,componentId:part.id,kind,x,y,termination:null});
-  if (kind === 'box') part.terminals=[terminal('box','ground',52,213.85)];
+  if (isSteelBox(part)) part.terminals=[terminal('box','ground',52,kind==='ceiling'?155:213.85)];
+  if (kind === 'lampholder') part.terminals=[terminal('hot','hot',160,105),terminal('neutral','neutral',30,105)];
   if (kind === 'switch') part.terminals=[terminal('a','hot',103,98),terminal('b','hot',103,205),terminal('ground','ground',10,236)];
   if (kind === 'receptacle') part.terminals=part.receptacle!.terminals.map(t => ({...t,componentId:part.id,x:t.kind==='hot'?96:t.kind==='neutral'?18:23,y:t.kind==='ground'?239:t.id.endsWith('upper')?91:200}));
   if (kind === 'receptacle') part.receptacle!.terminals=part.terminals;
@@ -45,16 +46,28 @@ export function worldPosition(state: Workbench, part: Component): { x: number; y
   if (!parent) return { x: part.x, y: part.y };
   const p = worldPosition(state,parent); return { x: p.x + part.x + (part.pulledOut?200:0), y: p.y + part.y };
 }
+export const isSteelBox = (p:Component) => ['box','box2','box3','ceiling'].includes(p.kind);
+export const isDevice = (p:Component) => ['switch','receptacle','lampholder'].includes(p.kind);
+export const gangCount = (p:Component) => p.kind==='box3'?3:p.kind==='box2'?2:1;
+export const compatible = (device:Component,box:Component) => isSteelBox(box) && (box.kind==='ceiling'?device.kind==='lampholder':device.kind==='switch'||device.kind==='receptacle');
+export const slotOffset = (box:Component,slot=0) => box.kind==='ceiling'?{x:15,y:15}:{x:mountOffset.x+120*slot,y:mountOffset.y};
+export function mountingSlot(state:Workbench,part:Component,box:Component):number|undefined {
+ if(!compatible(part,box))return;
+ const p=worldPosition(state,box),d=worldPosition(state,part);
+ return Array.from({length:gangCount(box)},(_,i)=>i).filter(i=>!state.components.some(c=>c.parentId===box.id&&c.id!==part.id&&(c.slot??0)===i)).sort((a,b)=>Math.abs(d.x-p.x-slotOffset(box,a).x)-Math.abs(d.x-p.x-slotOffset(box,b).x))[0];
+}
 export function snapTarget(state: Workbench, part: Component): Component | undefined {
-  if ((part.kind !== 'switch' && part.kind !== 'receptacle') || (part.parentId&&!part.pulledOut)) return;
-  return state.components.filter(p => p.kind === 'box' && !state.components.some(child => child.parentId === p.id && child.id!==part.id)).reverse().find(box => {
-    const p = worldPosition(state,box);
-    return Math.abs(worldPosition(state,part).x - p.x - mountOffset.x) < 62 && Math.abs(worldPosition(state,part).y - p.y - mountOffset.y) < 85;
-  });
+ if(!isDevice(part)||(part.parentId&&!part.pulledOut))return;
+ return state.components.filter(p=>compatible(part,p)).reverse().find(box=>{
+  const slot=mountingSlot(state,part,box);if(slot===undefined)return false;
+  const p=worldPosition(state,box),d=worldPosition(state,part),offset=slotOffset(box,slot);
+  return Math.abs(d.x-p.x-offset.x)<62&&Math.abs(d.y-p.y-offset.y)<85;
+ });
 }
 export function mountDevice(state: Workbench, part: Component, box: Component) {
-  if ((part.kind !== 'switch' && part.kind !== 'receptacle') || box.kind !== 'box' || (part.parentId&&!(part.pulledOut&&part.parentId===box.id)) || state.components.some(p => p.parentId === box.id && p.id!==part.id)) return false;
-  part.parentId = box.id; part.pulledOut=false; Object.assign(part,mountOffset); return true;
+ const slot=mountingSlot(state,part,box);
+ if(slot===undefined||(part.parentId&&!(part.pulledOut&&part.parentId===box.id)))return false;
+ part.parentId=box.id;part.slot=slot;part.pulledOut=false;Object.assign(part,slotOffset(box,slot));return true;
 }
 export function deletePart(state: Workbench, id: string) {
   const removed = new Set([id]);

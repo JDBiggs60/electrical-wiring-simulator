@@ -1,5 +1,5 @@
-import { createWorkbench as baseCreate, deletePart as baseDelete, worldPosition, partSize, type Component, type Workbench as BaseWorkbench } from './workbench-model.ts';
-export { addPart, mountOffset, mountSwitch, partSize, snapTarget, workbenchHistory, worldPosition } from './workbench-model.ts';
+import { createWorkbench as baseCreate, deletePart as baseDelete, worldPosition, partSize, isSteelBox, type Component, type Workbench as BaseWorkbench } from './workbench-model.ts';
+export { addPart, mountOffset, mountSwitch, isSteelBox, isDevice, slotOffset, mountingSlot, compatible, gangCount, partSize, snapTarget, workbenchHistory, worldPosition } from './workbench-model.ts';
 export type { PartKind } from './workbench-model.ts';
 export type EntryId = 'left' | 'right';
 export interface CableEnd { boxId: string; entryId: EntryId }
@@ -8,8 +8,8 @@ export interface InstalledCable { id: string; type: '14/2 NM-B with ground'; fro
 export interface Workbench extends BaseWorkbench { cables: InstalledCable[]; nextCableId: number }
 export const entries = { left: { x:25.35, y:108.55, side:-1 }, right: { x:146.9, y:162.5, side:1 } } as const;
 export const panelEntries = { left: {x:0,y:225,side:-1}, right:{x:260,y:275,side:1} } as const;
-export const isEnclosure = (p:Component) => p.kind === 'box' || p.kind === 'panel';
-export const entriesFor = (p:Component) => p.kind === 'panel' ? panelEntries : entries;
+export const isEnclosure = (p:Component) => isSteelBox(p) || p.kind === 'panel';
+export const entriesFor = (p:Component) => p.kind === 'panel' ? panelEntries : p.kind==='ceiling'?{left:{x:12,y:85,side:-1 as const},right:{x:208,y:135,side:1 as const}}:{left:entries.left,right:{...entries.right,x:entries.right.x+partSize[p.kind].width-172}};
 export function createWorkbench(): Workbench { return { ...baseCreate(), cables: [], nextCableId:1 }; }
 export function entryPosition(state: Workbench, end: CableEnd) {
   const box = state.components.find(p => p.id === end.boxId && isEnclosure(p));
@@ -41,7 +41,7 @@ export function deletePart(state: Workbench,id:string) {
 }
 export function unmountDevice(state: Workbench, part: Component) {
   if (!part.parentId) return false;
-  const p = worldPosition(state,part); part.parentId = null; part.x = p.x+185; part.y = p.y; return true;
+  const p = worldPosition(state,part); part.parentId = null; delete part.slot; part.pulledOut=false; part.x = p.x+185; part.y = p.y; return true;
 }
 /** Shared inspection projection; every conductor is the same object from the
  * installed cable, with disconnected termination records at both ends. */

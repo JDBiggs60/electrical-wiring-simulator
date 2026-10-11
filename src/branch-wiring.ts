@@ -1,3 +1,4 @@
+import {isSteelBox,isDevice} from './workbench-model.ts';
 import type {Workbench} from './cable-workbench-model.ts';
 export function wireEnds(s:Workbench) {
  return [...s.cables.flatMap(c=>c.conductors.flatMap(w=>w.ends.map(e=>({wireId:w.id,kind:w.kind,end:e})))),...s.pigtails.flatMap(w=>w.ends.map(e=>({wireId:w.id,kind:'bare' as const,end:e})))];
@@ -6,13 +7,16 @@ export function wiringNodes(s:Workbench) {
  return [...s.components.flatMap(c=>c.terminals.map(t=>({id:t.id,boxId:c.parentId??c.id,kind:t.kind,type:'terminal' as const}))),...s.connectors.map(c=>({id:c.id,boxId:c.boxId,kind:c.kind,type:'connector' as const}))];
 }
 export function addPigtail(s:Workbench,boxId:string,role:'device'|'box') {
- if(!s.components.some(p=>p.id===boxId&&p.kind==='box')) return 'Pigtails belong inside a steel device box.';
- if(s.pigtails.some(p=>p.boxId===boxId&&p.role===role)) return 'That grounding pigtail already exists.';
- const id=`pigtail-${s.nextWiringId++}`;s.pigtails.push({id,boxId,role,ends:['splice','terminal'].map(name=>({id:`${id}.${name}`,boxId,kind:'bare',termination:null}))});return null;
+ if(!s.components.some(p=>p.id===boxId&&isSteelBox(p))) return 'Pigtails belong inside a steel device box.';
+ const devices=s.components.filter(p=>p.parentId===boxId&&p.terminals.some(t=>t.kind==='ground'));
+ const device=role==='device'?devices.find(d=>!s.pigtails.some(p=>p.boxId===boxId&&p.role==='device'&&(p.deviceId===d.id||(!p.deviceId&&d===devices[0])))):undefined;
+ if(role==='device'&&devices.length&&!device)return 'Every mounted device already has a grounding pigtail.';
+ if(s.pigtails.some(p=>p.boxId===boxId&&p.role===role)&&!device) return 'That grounding pigtail already exists.';
+ const id=`pigtail-${s.nextWiringId++}`;s.pigtails.push({id,boxId,role,...(device?{deviceId:device.id}:{}),ends:['splice','terminal'].map(name=>({id:`${id}.${name}`,boxId,kind:'bare',termination:null}))});return null;
 }
 export function addConnector(s:Workbench,boxId:string) {
  if(s.connectors.some(c=>c.boxId===boxId&&c.kind==='ground')) return 'A grounding connector already exists in this box.';
- if(!s.components.some(p=>p.id===boxId&&p.kind==='box')) return 'Create ground connectors inside the device box.';
+ if(!s.components.some(p=>p.id===boxId&&isSteelBox(p))) return 'Create ground connectors inside the device box.';
  s.connectors.push({id:`connector-${s.nextWiringId++}`,boxId,capacity:4,kind:'ground',endIds:[],x:510,y:630});return null;
 }
 export function disconnect(s:Workbench,id:string) {
@@ -40,8 +44,8 @@ export function connectEnd(s:Workbench,endId:string,targetId:string) {
  for(const p of s.components)for(const t of p.terminals)if(t.id===targetId)t.termination=endId;
  return null;
 }
-export function pullDevice(s:Workbench,boxId:string) {const p=s.components.find(p=>p.parentId===boxId&&(p.kind==='receptacle'||p.kind==='switch'));if(!p)return 'Mount a switch or receptacle in this box first.';p.pulledOut=true;return null;}
-export function mountPulledDevice(s:Workbench,boxId:string) {const p=s.components.find(p=>p.parentId===boxId&&(p.kind==='receptacle'||p.kind==='switch'));if(!p)return 'This box has no associated device.';p.pulledOut=false;return null;}
+export function pullDevice(s:Workbench,boxId:string,deviceId?:string) {const p=s.components.find(p=>p.parentId===boxId&&isDevice(p)&&(!deviceId||p.id===deviceId));if(!p)return 'Mount a switch or receptacle in this box first.';p.pulledOut=true;return null;}
+export function mountPulledDevice(s:Workbench,boxId:string,deviceId?:string) {const p=s.components.find(p=>p.parentId===boxId&&isDevice(p)&&(!deviceId||p.id===deviceId));if(!p)return 'This box has no associated device.';p.pulledOut=false;return null;}
 export function pruneWiring(s:Workbench) {
  s.pigtails=s.pigtails.filter(w=>s.components.some(c=>c.id===w.boxId));s.connectors=s.connectors.filter(w=>s.components.some(c=>c.id===w.boxId));
  s.spliceGroups=s.spliceGroups.filter(g=>s.components.some(c=>c.id===g.boxId)&&g.endIds.every(id=>wireEnds(s).some(w=>w.end.id===id&&!w.end.termination)));

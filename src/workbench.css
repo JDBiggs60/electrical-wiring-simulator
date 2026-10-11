@@ -70,3 +70,9 @@ body.workbench-page { margin:0; background:#edf0eb; color:#354038; font-family:s
 .wb-inspection-art [data-inspection-projection] text { pointer-events:none; }
 .wb-inspection-art { overflow-x:hidden; }
 .wb-inspection-art [data-wiring-canvas] { min-width:0; }
+/* Compact, collapsible hardware tray: parts never spill across the bench. */
+.wb-tray:has([data-tray-part="box2"]) > div { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.wb-tray:has([data-tray-part="box2"]) .wb-part:not(.wb-panel-part) { width:100%; min-width:0; }
+.wb-tray:has([data-tray-part="box2"]) .wb-part:not(.wb-panel-part) svg { height:78px; }
+.wb-tray:has([data-tray-part="box2"]) { max-height:calc(100% - 48px); overflow-y:auto; }
+.wb-inspection:has([data-gang-count="2"]),.wb-inspection:has([data-gang-count="3"]) { width:min(1550px,97vw); }
