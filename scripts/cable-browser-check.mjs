@@ -1,22 +1,23 @@
+import {mouseBounds} from './browser-pointer.mjs';
 import { expect } from '@playwright/test';
 export async function checkCableMouse(page,url) {
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(url);await expect(page.locator('.wb-cable-guide')).toBeVisible();
-  const board=await page.locator('#wb-canvas').boundingBox();
+  const board=await mouseBounds(page.locator('#wb-canvas'));
   async function place(x,y) {
-    const r=await page.locator('[data-tray-part="box"]').boundingBox();
+    const r=await mouseBounds(page.locator('[data-tray-part="box"]'));
     await page.mouse.move(r.x+r.width/2,r.y+r.height/2);await page.mouse.down();await page.mouse.move(board.x+x,board.y+y,{steps:12});await page.mouse.up();
   }
   await place(430,340);await place(960,460);
-  const tool=await page.locator('[data-cable-tool]').boundingBox();
+  const tool=await mouseBounds(page.locator('[data-cable-tool]'));
   await page.mouse.move(tool.x+tool.width/2,tool.y+tool.height/2);await page.mouse.down();await page.mouse.move(board.x+660,board.y+500,{steps:12});
   await expect(page.locator('[data-cable-draft]')).toBeVisible();await page.mouse.up();
-  const draft=page.locator('[data-cable-draft]'),before=await draft.getAttribute('transform'),r=await draft.boundingBox();
+  const draft=page.locator('[data-cable-draft]'),before=await draft.getAttribute('transform'),r=await mouseBounds(draft);
   await page.mouse.move(r.x+r.width/2,r.y+12);await page.mouse.down();await page.mouse.move(r.x+r.width/2+50,r.y+62,{steps:10});await page.mouse.up();
   expect(await draft.getAttribute('transform')).not.toBe(before);await page.keyboard.press('Escape');
   await page.locator('[data-cable-tool]').click();
   await expect(page.locator('[data-entry-highlight="true"]')).toHaveCount(4);
-  const a=await page.locator('[data-entry-box="part-1"][data-entry="right"]').boundingBox(),b=await page.locator('[data-entry-box="part-2"][data-entry="left"]').boundingBox();
+  const a=await mouseBounds(page.locator('[data-entry-box="part-1"][data-entry="right"]')),b=await mouseBounds(page.locator('[data-entry-box="part-2"][data-entry="left"]'));
   await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();await page.mouse.move(board.x+700,board.y+350,{steps:12});
   await expect(page.locator('[data-cable-preview]')).toBeVisible();
   const preview=await page.locator('[data-cable-preview] path').first().getAttribute('d');
@@ -25,7 +26,7 @@ export async function checkCableMouse(page,url) {
   await expect(page.locator('[data-cable-preview]')).toContainText('Release to install');await page.mouse.up();
   const cable=page.locator('[data-installed-cable="cable-1"]');await expect(cable).toHaveCount(1);
   for(const id of ['part-1','part-2']) {
-    const path=await cable.locator('path').first().getAttribute('d'),box=await page.locator(`[data-component="${id}"]`).boundingBox();
+    const path=await cable.locator('path').first().getAttribute('d'),box=await mouseBounds(page.locator(`[data-component="${id}"]`));
     await page.mouse.move(box.x+30,box.y+230);await page.mouse.down();await page.mouse.move(box.x+65,box.y+260,{steps:12});await page.mouse.up();
     expect(await cable.locator('path').first().getAttribute('d')).not.toBe(path);
     await expect(cable).toHaveAttribute('data-from-box','part-1');await expect(cable).toHaveAttribute('data-to-box','part-2');
@@ -39,7 +40,7 @@ export async function checkCableMouse(page,url) {
   return {url:page.url(),mouseTrayDrag:true,mouseDraftPickup:true,highlightedEntries:true,mouseCableSnap:true,bothBoxRoutesUpdated:true,sharedInspection:true,runtimeErrors:errors};
 }
 export async function checkReceptacleMouse(page) {
-  const box=await page.locator('[data-component="part-1"]').boundingBox(),tray=await page.locator('[data-tray-part="receptacle"]').boundingBox();
+  const box=await mouseBounds(page.locator('[data-component="part-1"]')),tray=await mouseBounds(page.locator('[data-tray-part="receptacle"]'));
   await page.mouse.move(tray.x+tray.width/2,tray.y+tray.height/2);await page.mouse.down();await page.mouse.move(box.x+89,box.y+139,{steps:12});await expect(page.locator('[data-snap-target="part-1"]')).toBeVisible();await page.mouse.up();
   const device=page.locator('[data-kind="receptacle"]');await expect(device).toHaveAttribute('data-parent','part-1');await expect(device.locator('[data-terminal-state="disconnected"]')).toHaveCount(5);await expect(device.locator('[data-tab-intact="true"]')).toHaveCount(2);
   await page.getByRole('button',{name:'Unmount receptacle',exact:true}).click();await expect(device).toHaveAttribute('data-parent','');await page.getByRole('button',{name:'Undo',exact:true}).click();await expect(device).toHaveAttribute('data-parent','part-1');await expect(page.locator('[data-installed-cable="cable-1"]')).toHaveCount(1);
