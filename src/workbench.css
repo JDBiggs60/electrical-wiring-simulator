@@ -47,3 +47,8 @@ body.workbench-page { margin:0; background:#edf0eb; color:#354038; font-family:s
 @media(max-width:650px) { .wb-tray:has([data-cable-tool]) { width:210px; } }
 .wb-route-warning { font:700 12px system-ui,sans-serif; fill:#8d571e; pointer-events:none; }
 .wb-inspection .hw-device-stamp { font:650 8px system-ui,sans-serif; fill:#777964; }
+.wb-cable-guide { position:absolute; right:14px; top:14px; max-width:350px; padding:10px 13px; border:1px solid #a9b69f; border-radius:5px; background:#f0f3eaf2; font-size:12px; line-height:1.6; pointer-events:none; }
+.wb-cable-draft { cursor:grab; outline:none; }
+.wb-cable-draft:focus-visible path:first-child { stroke:#a07b26; }
+.wb-entry-label { font:600 12px system-ui,sans-serif; fill:#3e692d; pointer-events:none; paint-order:stroke; stroke:#fafbf6; stroke-width:3px; }
+@media(max-width:650px) { .wb-cable-guide { top:auto; right:8px; bottom:8px; max-width:60%; font-size:11px; padding:7px 9px; } }

@@ -25,6 +25,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - run: npm run build
+      - name: Stamp preview revision
+        run: node -e 'require("fs").writeFileSync("dist/preview-revision.json", JSON.stringify({revision:process.env.GITHUB_SHA}))'
       - name: Preserve production and stage the separate preview
         run: node scripts/prepare-preview.mjs
         env:
@@ -51,3 +53,17 @@ jobs:
           test "$(gh api repos/JDBiggs60/electrical-wiring-simulator/commits/main --jq .sha)" = ef403a7747cd426126bbfbaf5e8675ab86a1c146
       - name: Publish combined artifact with production unchanged
         uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify published preview with real mouse interactions
+        run: node scripts/verify-published-cable.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-cable-browser-check
+          path: work/published-cable-check

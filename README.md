@@ -188,3 +188,9 @@ The default `/preview/` page is now an original SVG hardware study for drawing a
 Four additional browser scenarios cover hardware structure and terminal distinction, identical conductor/entry/state rendering at both scales, keyboard inspection and focus restoration, mobile overflow, and continued access to the working lesson. Existing Phase 2B browser scenarios only change their entry URL to `?view=lesson`; all previous behavior checks remain. Validation is 37 model tests, 25 Chromium scenarios, strict TypeScript checking and the production build.
 
 Publish only to the existing `/preview/` site through the unchanged production-preserving branch workflow. Stop here for the owner's approval of the drawings; do not integrate a replacement interactive lesson, change the circuit engine or merge into main.
+
+## Phase 3B cable drag repair
+
+Open `/preview/?view=cables`. Drag two steel boxes onto the bench, click **14/2 NM-B**, then press a highlighted green knockout on the first box and drag to a green knockout on the other box. The temporary cable follows the pointer and **Release to install** confirms a valid destination. Release to snap it into the shared component model. Move either box to reroute the attached cable. Alternatively, drag the tray cable onto the bench; the loose draft can be picked up and dragged to the first knockout, followed by a click on the second. Escape cancels unfinished drafts without adding a history action.
+
+The preview deployment now runs real Chromium mouse interactions against the published Pages URL, checks its revision, and saves a screenshot and JSON report. The same mouse workflow runs in local browser tests. Production preservation checks and the main branch guard remain in place.

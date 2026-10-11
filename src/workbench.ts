@@ -7,7 +7,7 @@ import { addPart, createWorkbench, deletePart, mountOffset, mountSwitch, partSiz
 export function mountWorkbench(cableMode = false) {
   const state = createWorkbench(), history = workbenchHistory(state);
   let cableTool = false, inspectionId: string | null = null;
-  let pending: { source: CableEnd; point: {x:number;y:number}; pointer: number | null; moved: boolean } | null = null;
+  let pending: { source: CableEnd; point: {x:number;y:number}; pointer: number | null; moved: boolean; parked?: boolean } | null = null;
   let selected: string | null = null;
   let drag: { id: string; before: Workbench; dx: number; dy: number; pointer: number; fromTray: boolean; moved: boolean } | null = null;
   let width = 1000, height = 700;
@@ -15,7 +15,7 @@ export function mountWorkbench(cableMode = false) {
     ? `<g transform="scale(.65) translate(-48 -50)">${steelDeviceBox()}</g>`
     : `<g transform="scale(.956) translate(-35 0)">${pulledToggle()}</g>`;
   document.body.classList.add('workbench-page');
-  document.querySelector('#app')!.innerHTML = `<main class="wb-shell"><header class="wb-header"><div><span>OLD CARPENTER · ${cableMode ? 'PHASE 3B' : 'PHASE 3A'}</span><h1>${cableMode ? 'Cable installation workbench' : 'Drag & snap workbench'}</h1></div><nav aria-label="Workbench actions"><button data-wb-action="undo">Undo</button><button data-wb-action="redo">Redo</button><button data-wb-action="delete">Delete</button><button data-wb-action="reset">Reset</button>${cableMode ? '<button data-wb-action="unmount" hidden>Unmount switch</button><button data-wb-action="inspect" hidden>Inspect box</button>' : ''}<a href="?">Wiring lesson ↗</a></nav></header><section class="wb-stage" aria-label="Assembly workbench"><svg id="wb-canvas" role="group" aria-label="Drag components onto this empty workbench"></svg><details class="wb-tray" open><summary>Parts tray</summary><p>Drag a part onto the bench</p><div>${(['box','switch'] as PartKind[]).map(kind => `<button class="wb-part" data-tray-part="${kind}" aria-label="Drag ${kind === 'box' ? 'steel electrical box' : 'single-pole switch'} from parts tray"><svg viewBox="0 0 ${partSize[kind].width} ${partSize[kind].height}" aria-hidden="true">${art(kind)}</svg><span>${kind === 'box' ? 'Steel box' : 'Toggle switch'}</span></button>`).join('')}${cableMode ? '<button class="wb-part wb-cable-part" data-cable-tool aria-label="14/2 NM-B cable tool"><svg viewBox="0 0 80 100" aria-hidden="true"><path d="M15 85V35Q15 15 40 15T65 35V85" fill="none" stroke="#777" stroke-width="14"/><path d="M15 85V35Q15 15 40 15T65 35V85" fill="none" stroke="#e9dfb9" stroke-width="11"/></svg><span>14/2 NM-B</span></button>' : ''}</div></details><p class="wb-empty">${cableMode ? 'Drag two boxes here. Select NM-B, then drag between the highlighted knockout entries.' : 'Drag a steel box here, then drag a switch onto its mounting position.'}</p><div class="wb-cable-label" hidden></div></section><footer><p id="wb-status" role="status">Empty workbench. Drag parts from the tray using a mouse or touch.</p><span>${cableMode ? 'Cable installation only · disconnected conductors' : 'Assembly prototype · no electrical wiring yet'}</span></footer></main>`;
+  document.querySelector('#app')!.innerHTML = `<main class="wb-shell"><header class="wb-header"><div><span>OLD CARPENTER · ${cableMode ? 'PHASE 3B' : 'PHASE 3A'}</span><h1>${cableMode ? 'Cable installation workbench' : 'Drag & snap workbench'}</h1></div><nav aria-label="Workbench actions"><button data-wb-action="undo">Undo</button><button data-wb-action="redo">Redo</button><button data-wb-action="delete">Delete</button><button data-wb-action="reset">Reset</button>${cableMode ? '<button data-wb-action="unmount" hidden>Unmount switch</button><button data-wb-action="inspect" hidden>Inspect box</button>' : ''}<a href="?">Wiring lesson ↗</a></nav></header><section class="wb-stage" aria-label="Assembly workbench"><svg id="wb-canvas" role="group" aria-label="Drag components onto this empty workbench"></svg><details class="wb-tray" open><summary>Parts tray</summary><p>Drag a part onto the bench</p><div>${(['box','switch'] as PartKind[]).map(kind => `<button class="wb-part" data-tray-part="${kind}" aria-label="Drag ${kind === 'box' ? 'steel electrical box' : 'single-pole switch'} from parts tray"><svg viewBox="0 0 ${partSize[kind].width} ${partSize[kind].height}" aria-hidden="true">${art(kind)}</svg><span>${kind === 'box' ? 'Steel box' : 'Toggle switch'}</span></button>`).join('')}${cableMode ? '<button class="wb-part wb-cable-part" data-cable-tool aria-label="14/2 NM-B cable tool"><svg viewBox="0 0 80 100" aria-hidden="true"><path d="M15 85V35Q15 15 40 15T65 35V85" fill="none" stroke="#777" stroke-width="14"/><path d="M15 85V35Q15 15 40 15T65 35V85" fill="none" stroke="#e9dfb9" stroke-width="11"/></svg><span>14/2 NM-B</span></button>' : ''}</div></details><p class="wb-empty">${cableMode ? 'Drag two boxes here. Select NM-B, then drag between the highlighted knockout entries.' : 'Drag a steel box here, then drag a switch onto its mounting position.'}</p><div class="wb-cable-label" hidden></div>${cableMode ? '<div class="wb-cable-guide" role="status"></div>' : ''}</section><footer><p id="wb-status" role="status">Empty workbench. Drag parts from the tray using a mouse or touch.</p><span>${cableMode ? 'Cable installation only · disconnected conductors' : 'Assembly prototype · no electrical wiring yet'}</span></footer></main>`;
   const stage = document.querySelector<HTMLElement>('.wb-stage')!;
   const canvas = document.querySelector<SVGSVGElement>('#wb-canvas')!;
   const status = document.querySelector('#wb-status')!;
@@ -38,10 +38,13 @@ export function mountWorkbench(cableMode = false) {
     }).join('')}${target ? `<g data-snap-target="${target.id}" transform="translate(${target.x+mountOffset.x} ${target.y+mountOffset.y})" pointer-events="none"><rect x="-7" y="-7" width="122" height="316" rx="6" class="wb-snap"/><text x="0" y="-16" class="wb-snap-label">Release to mount</text></g>` : ''}`;
     if (cableMode) {
       canvas.innerHTML += state.components.filter(p=>p.kind==='box').map(box => (['left','right'] as const).map(entryId=> {
-        const end={boxId:box.id,entryId}, p=entryPosition(state,end)!, free=entryFree(state,end), active=cableTarget?.boxId===box.id && cableTarget.entryId===entryId;
+        const end={boxId:box.id,entryId}, p=entryPosition(state,end)!, free=entryFree(state,end), valid=free && (!pending?.source.boxId || pending.source.boxId!==box.id), ready=cableTool && valid, active=cableTarget?.boxId===box.id && cableTarget.entryId===entryId;
         const occupied=state.cables.find(c=>[c.from,c.to].some(e=>e.boxId===box.id&&e.entryId===entryId));
-        return `<g data-entry-box="${box.id}" data-entry="${entryId}" data-free="${free}" role="button" tabindex="0" aria-label="${box.id} ${entryId} knockout, ${free?'available':'occupied'}" class="wb-entry" transform="translate(${p.x} ${p.y})"><circle r="22" fill="transparent"/>${occupied?`<g transform="scale(.65)${p.side===1?' rotate(180)':''}">${nmBoxConnector(0,0)}</g>`:''}<circle r="${active?19:12}" fill="${free?'#e6f1df66':'transparent'}" stroke="${active?'#36752b':free?'#668c55':'#7e8580'}" stroke-width="${active?3:1.5}" stroke-dasharray="${free?'4 3':'0'}"/></g>`;
+        return `<g data-entry-box="${box.id}" data-entry="${entryId}" data-free="${free}" data-entry-highlight="${ready}" role="button" tabindex="0" aria-label="${box.id} ${entryId} knockout, ${free?'available':'occupied'}" class="wb-entry" transform="translate(${p.x} ${p.y})"><circle r="25" fill="transparent"/>${occupied?`<g transform="scale(.65)${p.side===1?' rotate(180)':''}">${nmBoxConnector(0,0)}</g>`:''}<circle r="${active?23:ready?20:12}" fill="${ready?'#d7edc8':'transparent'}" stroke="${active?'#36752b':ready?'#4c842f':'#7e8580'}" stroke-width="${ready?3:1.5}" stroke-dasharray="${ready?'0':free?'4 3':'0'}"/></g>${ready?`<text x="${p.x+p.side*30}" y="${p.y-28}" text-anchor="${p.side===-1?'end':'start'}" class="wb-entry-label">${pending?.source.boxId?'Finish here':'Start here'}</text>`:''}`;
       }).join('')).join('');
+      if (pending && !pending.source.boxId) {
+        canvas.innerHTML+=`<g data-cable-draft role="button" tabindex="0" aria-label="Uninstalled NM-B cable; drag to a green box entry" transform="translate(${pending.point.x} ${pending.point.y})" class="wb-cable-draft" ${pending.pointer!==null?'pointer-events="none"':''}><rect x="-85" y="-16" width="180" height="52" fill="transparent" pointer-events="all"/>${nmJacket('M-75 0H55Q75 0 75 20','draft',12).replace('Switch box to ceiling box','Uninstalled cable draft')}<circle cx="75" cy="20" r="10" fill="#d7edc8" stroke="#4c842f" stroke-width="2"/></g><text x="${pending.point.x}" y="${pending.point.y+49}" text-anchor="middle" class="wb-entry-label">${cableTarget?'Release to start cable':'Drag to a green box entry'}</text>`;
+      }
       if (pending?.source.boxId) { const from=entryPosition(state,pending.source)!; const to=cableTarget?entryPosition(state,cableTarget)!:pending.point;
         canvas.innerHTML+=`<g pointer-events="none" data-cable-preview>${nmJacket(`M${from.x} ${from.y}H${from.x+from.side*48}V${to.y}H${to.x}`,'pending',10)}${cableTarget?`<text x="${to.x+24}" y="${to.y-22}" class="wb-snap-label">Release to install</text>`:''}</g>`; }
       const cable=state.cables.find(c=>c.id===selected), label=document.querySelector<HTMLElement>('.wb-cable-label')!;
@@ -51,6 +54,11 @@ export function mountWorkbench(cableMode = false) {
       document.querySelector<HTMLButtonElement>('[data-wb-action="unmount"]')!.hidden=!mounted;
       document.querySelector<HTMLButtonElement>('[data-wb-action="inspect"]')!.hidden=!selectedBox;
       document.querySelector('[data-cable-tool]')!.setAttribute('aria-pressed',String(cableTool));
+      document.querySelector('.wb-cable-guide')!.textContent = pending?.source.boxId
+        ? '2. Move to a green entry on the other box. Release while dragging, or click to finish. Esc cancels.'
+        : pending?.parked ? 'Drag this loose cable to a green entry on Box A, then finish at Box B. It is not installed yet.'
+        : cableTool ? '1. Click and drag from a green entry on Box A to a green entry on Box B.'
+        : 'Cable: select 14/2 NM-B, then drag between the green box entries. Move a box to move an installed cable.';
       if (inspectionId) { inspection.querySelector('h2')!.textContent=`Inside ${inspectionId}`; inspection.querySelector('.wb-inspection-art')!.innerHTML=cableInspection(state,inspectionId); }
     }
     document.querySelector<HTMLButtonElement>('[data-wb-action="undo"]')!.disabled = !history.canUndo || !!drag;
@@ -63,6 +71,8 @@ export function mountWorkbench(cableMode = false) {
   function begin(e: PointerEvent) {
     if (e.button !== 0 || drag) return;
     const target = e.target as Element;
+    const draft=target.closest('[data-cable-draft]');
+    if (cableMode && draft && pending && !pending.source.boxId) { e.preventDefault(); pending.pointer=e.pointerId;pending.parked=false;pending.moved=false;pending.point=point(e);(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);render();return; }
     const inspectIcon=target.closest('[data-inspect-box]'); if (cableMode && inspectIcon) { e.preventDefault(); inspect(inspectIcon.getAttribute('data-inspect-box')!); return; }
     const cableEntry=target.closest('[data-entry-box]');
     const cableObject=target.closest('[data-installed-cable]');
@@ -71,6 +81,7 @@ export function mountWorkbench(cableMode = false) {
     if (cableMode && cableEntry) {
       e.preventDefault(); const end: CableEnd={boxId:cableEntry.getAttribute('data-entry-box')!,entryId:cableEntry.getAttribute('data-entry') as CableEnd['entryId']};
       if (!entryFree(state,end)) { status.textContent='This knockout is occupied. Use a free entry or delete its cable.'; return; }
+      if (pending?.source.boxId && pending.pointer===null && pending.source.boxId===end.boxId && pending.source.entryId===end.entryId) { pending.pointer=e.pointerId;pending.moved=false;pending.point=point(e);(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);render();return; }
       if (pending?.source.boxId && pending.pointer===null) { const before=structuredClone(state); const error=installCable(state,pending.source,end); status.textContent=error??'NM-B cable installed. Inspect either box to see its loose conductors.'; if (!error) { history.record(before); pending=null;cableTool=false; } render(); return; }
       pending={source:end,point:point(e),pointer:e.pointerId,moved:false}; cableTool=true; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); status.textContent='Drag to a free entry on another box. Escape cancels.'; render(); return;
     }
@@ -78,6 +89,7 @@ export function mountWorkbench(cableMode = false) {
     const element = target.closest('[data-component]');
     if (!tray && !element) { if (target.closest('#wb-canvas')) { selected = null; render(); } return; }
     e.preventDefault();
+    pending=null;cableTool=false;
     const before = structuredClone(state), p = point(e);
     let part;
     if (tray) {
@@ -93,7 +105,7 @@ export function mountWorkbench(cableMode = false) {
     status.textContent = 'Drag to position. A green outline shows when a switch will mount.'; render();
   }
   function move(e: PointerEvent) {
-    if (pending && (pending.pointer===e.pointerId || pending.pointer===null)) { e.preventDefault(); pending.point=point(e); pending.moved=true; render(); return; }
+    if (pending && (pending.pointer===e.pointerId || (pending.pointer===null && !!pending.source.boxId))) { e.preventDefault(); pending.point=point(e); pending.moved=true; render(); return; }
     if (!drag || e.pointerId !== drag.pointer) return;
     e.preventDefault(); const p = point(e), part = state.components.find(c => c.id === drag!.id)!;
     const size = partSize[part.kind];
@@ -105,7 +117,11 @@ export function mountWorkbench(cableMode = false) {
     if (pending && pending.pointer===e.pointerId) {
       if (cancel) { pending=null;status.textContent='Cable installation cancelled.';render();return; }
       const target=nearestEntry(state,point(e),pending.source.boxId?pending.source:undefined);
-      if (!pending.source.boxId) { if (target) { pending.source=target;pending.pointer=null;status.textContent='Cable start selected. Drag or click a free entry on another box.'; } else { pending=null;status.textContent='NM-B selected. Drag between two free knockout entries.'; } }
+      if (!pending.source.boxId) {
+        if (target) { pending.source=target;pending.pointer=null;pending.parked=false;status.textContent='Cable start selected. Move to a green entry on the other box, then click to finish.'; }
+        else if (pending.moved) { pending.pointer=null;pending.parked=true;pending.moved=false;status.textContent='Loose cable ready. Drag it to a green box entry to begin; Escape removes the unfinished draft.'; }
+        else { pending=null;status.textContent='NM-B selected. Drag from a green entry on Box A to one on Box B.'; }
+      }
       else if (target && pending.moved) { const before=structuredClone(state); const error=installCable(state,pending.source,target); if (!error) { history.record(before);selected=state.cables.at(-1)!.id; } status.textContent=error??'Cable installed. Inspect either box to see its loose conductors.';pending=null;cableTool=false; }
       else if (!pending.moved) { pending.pointer=null;status.textContent='Click a free knockout on another box to finish; Escape cancels.'; }
       else { pending=null;status.textContent='Cable installation cancelled: no valid free entry at the drop point.'; }
@@ -131,7 +147,7 @@ export function mountWorkbench(cableMode = false) {
     if (drag) return;
     if (name === 'inspect' && selected) { const part=state.components.find(p=>p.id===selected); const id=part?.kind==='box'?part.id:part?.parentId; if (id) inspect(id); return; }
     if (name === 'unmount' && selected) { const part=state.components.find(p=>p.id===selected); const child=part?.parentId?part:state.components.find(p=>p.parentId===selected); if (child) { const before=structuredClone(state); unmountSwitch(state,child); child.x=Math.min(width-120,child.x); history.record(before); } selected=null;status.textContent='Switch unmounted; box and cables retained.';render();return; }
-    pending=null;
+    pending=null;cableTool=false;
     if (name === 'undo' || name === 'redo') history[name]();
     else if (name === 'delete' && selected) { const before = structuredClone(state); deletePart(state,selected); history.record(before); }
     else if (name === 'reset') { const before = structuredClone(state); state.components = []; state.cables=[]; history.record(before); }
@@ -143,10 +159,11 @@ export function mountWorkbench(cableMode = false) {
   header.addEventListener('pointerdown',e => { const event = e as PointerEvent; if (event.pointerType === 'touch' && (event.target as Element).closest('[data-wb-action]')) event.preventDefault(); });
   header.addEventListener('pointerup',e => { const event = e as PointerEvent; const button = (event.target as Element).closest<HTMLButtonElement>('[data-wb-action]'); if (event.pointerType === 'touch' && button && !button.disabled) { event.preventDefault(); action(button.getAttribute('data-wb-action')!); } });
   header.addEventListener('click',e => { if ((e as PointerEvent).pointerType === 'touch') return; const name = (e.target as Element).closest('[data-wb-action]')?.getAttribute('data-wb-action'); if (name) action(name); });
+  document.querySelector('[data-cable-tool]')?.addEventListener('click', e=> { if ((e as MouseEvent).detail===0) { cableTool=true;pending=null;render(); } });
   canvas.addEventListener('dblclick',e=> { if (!cableMode) return; const id=(e.target as Element).closest('[data-component]')?.getAttribute('data-component'); const part=state.components.find(p=>p.id===id); if (part) inspect(part.kind==='box'?part.id:part.parentId??''); });
-  canvas.addEventListener('keydown',e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const inspectIcon=(e.target as Element).closest('[data-inspect-box]'); if (inspectIcon && cableMode) { inspect(inspectIcon.getAttribute('data-inspect-box')!); return; } const entry=(e.target as Element).closest('[data-entry-box]'); if (entry && cableMode) { const end: CableEnd={boxId:entry.getAttribute('data-entry-box')!,entryId:entry.getAttribute('data-entry') as CableEnd['entryId']}; if (pending?.source.boxId && entryFree(state,end)) { const before=structuredClone(state); const error=installCable(state,pending.source,end); if (!error) { history.record(before);pending=null; } status.textContent=error??'Cable installed.'; } else if (entryFree(state,end)) pending={source:end,point:entryPosition(state,end)!,pointer:null,moved:false}; } else selected=(e.target as Element).closest('[data-component],[data-installed-cable]')?.getAttribute('data-component') ?? (e.target as Element).closest('[data-installed-cable]')?.getAttribute('data-installed-cable') ?? null; render(); } });
+  canvas.addEventListener('keydown',e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const inspectIcon=(e.target as Element).closest('[data-inspect-box]'); if (inspectIcon && cableMode) { inspect(inspectIcon.getAttribute('data-inspect-box')!); return; } const entry=(e.target as Element).closest('[data-entry-box]'); if (entry && cableMode) { const end: CableEnd={boxId:entry.getAttribute('data-entry-box')!,entryId:entry.getAttribute('data-entry') as CableEnd['entryId']}; if (pending?.source.boxId && entryFree(state,end)) { const before=structuredClone(state); const error=installCable(state,pending.source,end); if (!error) { history.record(before);pending=null; } status.textContent=error??'Cable installed.'; } else if (entryFree(state,end)) { cableTool=true;pending={source:end,point:entryPosition(state,end)!,pointer:null,moved:false}; } } else selected=(e.target as Element).closest('[data-component],[data-installed-cable]')?.getAttribute('data-component') ?? (e.target as Element).closest('[data-installed-cable]')?.getAttribute('data-installed-cable') ?? null; render(); } });
   document.addEventListener('keydown',e => {
-    if (e.key === 'Escape' && pending) { pending=null;status.textContent='Cable installation cancelled.';render();return; }
+    if (e.key === 'Escape' && pending) { pending=null;cableTool=false;status.textContent='Cable installation cancelled.';render();return; }
     if (e.key === 'Escape' && drag) { Object.assign(state,drag.before); drag = null; selected = null; render(); return; }
     if (e.ctrlKey || e.metaKey) { const key = e.key.toLowerCase(); if (key === 'z' || key === 'y') { e.preventDefault(); action(key === 'y' || e.shiftKey ? 'redo' : 'undo'); } }
     else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); action('delete'); }
