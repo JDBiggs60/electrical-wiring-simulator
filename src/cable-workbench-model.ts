@@ -3,7 +3,7 @@ export { addPart, mountOffset, mountSwitch, partSize, snapTarget, workbenchHisto
 export type { PartKind } from './workbench-model.ts';
 export type EntryId = 'left' | 'right';
 export interface CableEnd { boxId: string; entryId: EntryId }
-export interface CableConductor { id: string; kind: 'black' | 'white' | 'bare'; ends: [CableEnd & { id: string; termination: null }, CableEnd & { id: string; termination: null }] }
+export interface CableConductor { id: string; kind: 'black' | 'white' | 'bare'; ends: [CableEnd & { id: string; termination: string | null }, CableEnd & { id: string; termination: string | null }] }
 export interface InstalledCable { id: string; type: '14/2 NM-B with ground'; from: CableEnd; to: CableEnd; conductors: CableConductor[] }
 export interface Workbench extends BaseWorkbench { cables: InstalledCable[]; nextCableId: number }
 export const entries = { left: { x:25.35, y:108.55, side:-1 }, right: { x:146.9, y:162.5, side:1 } } as const;
