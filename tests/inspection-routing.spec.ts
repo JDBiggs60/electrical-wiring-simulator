@@ -25,7 +25,7 @@ for (const kind of ['switch', 'lampholder'] as const) test(`${kind}: bounded ins
   }
   const open=()=>page.locator('[data-inspect-box="part-2"]').click();
   const close=()=>page.getByRole('button',{name:'Return to workbench',exact:true}).click();
-  const end=(id:string)=>dialog.locator(`[data-drag-end="${id}"]`);
+  const end=(id:string)=>dialog.locator(`[data-drag-end="${id}"],[data-anchored-end="${id}"]`);
   const terminal=(id:string)=>dialog.locator(`[data-wire-target="${id}"] circle`).last();
   async function connect(id:string,target:string) {
     await drag(end(id),terminal(target));
@@ -42,13 +42,13 @@ for (const kind of ['switch', 'lampholder'] as const) test(`${kind}: bounded ins
   if(kind==='switch')await dialog.locator('[data-wire-action="device-tail"]').click();
   await dialog.locator('[data-wire-action="box-tail"]').click();
   await dialog.locator('[data-wire-action="connector"]').click();
-  const tails=await dialog.locator('[data-drag-end]').evaluateAll(es=>es.map(e=>e.getAttribute('data-drag-end')!).filter(id=>id.startsWith('pigtail')));
+  const tails=await dialog.locator('[data-drag-end],[data-anchored-end]').evaluateAll(es=>es.map(e=>(e.getAttribute('data-drag-end')??e.getAttribute('data-anchored-end'))!).filter(id=>id.startsWith('pigtail')));
   const nut=(await dialog.locator('[data-ground-connector]').getAttribute('data-ground-connector'))!;
   await connect('cable-1.bare.to',nut);
   if(kind==='switch')await connect('cable-2.bare.from',nut);
   for(let i=0;i<tails.length;i+=2)await connect(tails[i]!,nut);
-  if(kind==='switch')await connect(tails[1]!,'part-3.ground');
-  await connect(tails.at(-1)!,'part-2.box');
+  if(kind==='switch')await expect(dialog.locator(`[data-end-id="${tails[1]}"]`)).toHaveAttribute('data-connection-target','part-3.ground');
+  await expect(dialog.locator(`[data-end-id="${tails.at(-1)}"]`)).toHaveAttribute('data-connection-target','part-2.box');
   await page.mouse.move(1200,60);
   await dialog.screenshot({path:`work/${kind}-inspection-after.png`});
   const snapshot=async()=>dialog.locator('[data-end-id]').evaluateAll(es=>es.map(e=>({id:e.getAttribute('data-end-id'),to:e.getAttribute('data-connection-target')})));
@@ -73,7 +73,7 @@ for (const kind of ['switch', 'lampholder'] as const) test(`${kind}: bounded ins
         const wire=path.parentElement!,id=wire.getAttribute('data-end-id')!;
         const length=path.getTotalLength(),a=path.getPointAtLength(0),b=path.getPointAtLength(length);
         if(length>Math.hypot(a.x-b.x,a.y-b.y)+2*(r.width+r.height)/path.getScreenCTM()!.a)overshot.push(id);
-        const tip=svg.querySelector(`[data-drag-end="${id}"] circle`) as SVGCircleElement;
+        const tip=svg.querySelector(`[data-drag-end="${id}"] circle,[data-anchored-end="${id}"] circle`) as SVGCircleElement;
         if(Math.hypot(b.x-tip.cx.baseVal.value,b.y-tip.cy.baseVal.value)>.1)overshot.push('incorrect endpoint: '+id);
         for(let i=0;i<=100;i++) {
           const point=path.getPointAtLength(length*i/100),screen=point.matrixTransform(path.getScreenCTM()!);

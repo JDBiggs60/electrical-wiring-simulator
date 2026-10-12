@@ -28,6 +28,6 @@ test('multi-gang devices each get their own loose grounding pigtail, with separa
  for(let i=0;i<3;i++)assert.equal(addPigtail(s,box.id,'device'),null);
  assert.equal(addPigtail(s,box.id,'box'),null);assert.notEqual(addPigtail(s,box.id,'device'),null);
  assert.equal(new Set(s.pigtails.filter(p=>p.role==='device').map(p=>p.deviceId)).size,3);
- assert.ok(s.pigtails.every(p=>p.ends.every(e=>e.termination===null)));const l=wiringLayout(s,box.id);
+ assert.ok(s.pigtails.every(p=>p.ends[0].termination===null&&p.ends[1].termination===(p.role==='device'?p.deviceId+'.ground':box.id+'.box')));const l=wiringLayout(s,box.id);
  for(const w of l.wires){assert.ok(w.loose.x>=l.base.x+26*l.base.scale&&w.loose.x<=l.base.x+(partSize.box3.width-25)*l.base.scale);assert.ok(w.loose.y>=l.base.y+18*l.base.scale&&w.loose.y<=l.base.y+260*l.base.scale);}
 });

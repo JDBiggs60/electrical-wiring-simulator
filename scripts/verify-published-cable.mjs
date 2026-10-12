@@ -1,3 +1,4 @@
+import {checkAnchoredInspection} from './anchored-inspection-browser-check.mjs';
 import {checkHardwareExpansionMouse} from './hardware-expansion-browser-check.mjs';
 import { checkClearInspectionMouse } from './clear-inspection-browser-check.mjs';
 import { checkWireNutMouse } from './wire-nut-browser-check.mjs';
@@ -7,7 +8,7 @@ import { chromium } from '@playwright/test';
 import { mkdir,writeFile,copyFile } from 'node:fs/promises';
 import { checkCableMouse, checkReceptacleMouse } from './cable-browser-check.mjs';
 const base='https://jdbiggs60.github.io/electrical-wiring-simulator/preview/';
-const browser=await chromium.launch();
+const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,proxy:process.env.HTTPS_PROXY?{server:process.env.HTTPS_PROXY}:undefined});
 let stage='preview revision';
 try {
   const page=await browser.newPage({viewport:{width:1440,height:1100}});
@@ -35,8 +36,13 @@ try {
   Object.assign(report,await checkClearInspectionMouse(page,`${base}?view=cables&revision=${revision}`,'receptacle'));
   stage='multi-gang and ceiling fixture assembly';
   Object.assign(report,await checkHardwareExpansionMouse(page,`${base}?view=cables&revision=${revision}`));
+  for(const kind of ['switch','receptacle'])for(const phone of [false,true]){
+    stage=`anchored ${kind} ${phone?'phone':'desktop'} inspection`;
+    await checkAnchoredInspection(page,`${base}?view=cables&revision=${revision}`,kind,phone);
+    report[`${kind}${phone?'Phone':'Desktop'}AnchoredAndBounded`]=true;
+  }
   await mkdir('work/published-cable-check',{recursive:true});
-  await Promise.all(['head-on-switch-workbench.png','head-on-receptacle-workbench.png','lampholder-bulb-workbench.png','switch-grounding-loose.png','receptacle-grounding-loose.png','triple-gang-inspection.png','ceiling-fixture-inspection.png','neat-panel-routing.png','switch-box-wire-nuts.png','clear-switch-inspection.png','clear-receptacle-inspection.png'].map(name=>copyFile(`work/${name}`,`work/published-cable-check/${name}`)));
+  await Promise.all(['head-on-switch-workbench.png','head-on-receptacle-workbench.png','lampholder-bulb-workbench.png','switch-grounding-loose.png','receptacle-grounding-loose.png','triple-gang-inspection.png','ceiling-fixture-inspection.png','neat-panel-routing.png','switch-box-wire-nuts.png','clear-switch-inspection.png','clear-receptacle-inspection.png',...['switch','receptacle'].flatMap(k=>['phone','desktop'].flatMap(size=>['loose','connected'].map(state=>`anchored-${k}-${size}-${state}.png`)))].map(name=>copyFile(`work/${name}`,`work/published-cable-check/${name}`)));
   await page.screenshot({path:'work/published-cable-check/workbench.png',fullPage:true});
   await writeFile('work/published-cable-check/result.json',JSON.stringify({revision,...report},null,2));
   console.log(JSON.stringify(report));

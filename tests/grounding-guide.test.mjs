@@ -10,8 +10,8 @@ test('ground progress follows actual splices and two independent bonds, includin
  groupEnds(s,incoming,outgoing,300,300);assert.equal(groundingState(s,box.id).splice,false);
  addPigtail(s,box.id,'device');addPigtail(s,box.id,'box');addConnector(s,box.id);const [d,bond]=s.pigtails,nut=s.connectors[0];
  for(const id of [incoming,outgoing,d.ends[0].id,bond.ends[0].id])assert.equal(connectEnd(s,id,nut.id),null);
- assert.equal(groundingState(s,box.id).splice,true);assert.equal(groundingState(s,box.id).device,false);assert.equal(groundingState(s,box.id).box,false);
- connectEnd(s,d.ends[1].id,device.id+'.ground');assert.equal(groundingState(s,box.id).device,true);assert.equal(groundingState(s,box.id).box,false);
+ assert.equal(groundingState(s,box.id).splice,true);assert.equal(groundingState(s,box.id).device,true);assert.equal(groundingState(s,box.id).box,true);
+ disconnect(s,bond.ends[1].id);connectEnd(s,d.ends[1].id,device.id+'.ground');assert.equal(groundingState(s,box.id).device,true);assert.equal(groundingState(s,box.id).box,false);
  const h=workbenchHistory(s),before=structuredClone(s);connectEnd(s,bond.ends[1].id,box.id+'.box');h.record(before);assert.equal(groundingState(s,box.id).box,true);
  h.undo();assert.equal(groundingState(s,box.id).box,false);assert.equal(groundingState(s,box.id).device,true);h.redo();assert.equal(groundingState(s,box.id).box,true);
  const json=JSON.stringify(s);assert.match(groundingGuide(s,box.id),/data-ground-status="splice" data-complete="true"/);assert.equal(JSON.stringify(s),json);

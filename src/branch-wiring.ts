@@ -12,7 +12,14 @@ export function addPigtail(s:Workbench,boxId:string,role:'device'|'box') {
  const device=role==='device'?devices.find(d=>!s.pigtails.some(p=>p.boxId===boxId&&p.role==='device'&&(p.deviceId===d.id||(!p.deviceId&&d===devices[0])))):undefined;
  if(role==='device'&&devices.length&&!device)return 'Every mounted device already has a grounding pigtail.';
  if(s.pigtails.some(p=>p.boxId===boxId&&p.role===role)&&!device) return 'That grounding pigtail already exists.';
- const id=`pigtail-${s.nextWiringId++}`;s.pigtails.push({id,boxId,role,...(device?{deviceId:device.id}:{}),ends:['splice','terminal'].map(name=>({id:`${id}.${name}`,boxId,kind:'bare',termination:null}))});return null;
+ const target=role==='device'?device?.terminals.find(t=>t.kind==='ground'):s.components.find(p=>p.id===boxId)?.terminals.find(t=>t.kind==='ground');
+ if(!target)return role==='device'?'Mount a switch or receptacle with a green grounding screw first.':'This box has no grounding screw.';
+ if(target.termination||s.connections.some(c=>c.toId===target.id))return 'That grounding screw already has a conductor; use its existing connection.';
+ const id=`pigtail-${s.nextWiringId++}`,tail={id,boxId,role,...(device?{deviceId:device.id}:{}),ends:['splice','terminal'].map(name=>({id:`${id}.${name}`,boxId,kind:'bare' as const,termination:null as string|null}))};
+ s.pigtails.push(tail);
+ // Creation is one user action: electrically attach only the screw end. The
+ // splice end remains open until the learner joins it to the ground conductors.
+ return connectEnd(s,tail.ends[1]!.id,target.id);
 }
 export function addConnector(s:Workbench,boxId:string) {
  if(s.connectors.some(c=>c.boxId===boxId&&c.kind==='ground')) return 'A grounding connector already exists in this box.';
