@@ -67,16 +67,19 @@ for (const kind of ['switch', 'lampholder'] as const) test(`${kind}: bounded ins
         return ceiling ? x>=20&&x<=200&&y>=20&&y<=200&&x+y>=90&&x+y<=350&&x-y<=130&&y-x<=130 : x>=27&&x<=145&&y>=19&&y<=259;
       };
       const escaped:string[]=[],crossed:string[]=[],overshot:string[]=[];
-      const face=svg.querySelector('[data-inspection-face="front"]')??svg.querySelector('[data-inspection-device] [data-device-body]');
+      const face=svg.querySelector('[data-inspection-device] [data-device-body]');
       const r=face!.getBoundingClientRect();
       for(const path of svg.querySelectorAll<SVGPathElement>('[data-wiring-wire] path:first-of-type')) {
-        const wire=path.parentElement!,target=wire.getAttribute('data-connection-target')!,id=wire.getAttribute('data-end-id')!;
+        const wire=path.parentElement!,id=wire.getAttribute('data-end-id')!;
         const length=path.getTotalLength(),a=path.getPointAtLength(0),b=path.getPointAtLength(length);
+        if(length>Math.hypot(a.x-b.x,a.y-b.y)+2*(r.width+r.height)/path.getScreenCTM()!.a)overshot.push(id);
+        const tip=svg.querySelector(`[data-drag-end="${id}"] circle`) as SVGCircleElement;
+        if(Math.hypot(b.x-tip.cx.baseVal.value,b.y-tip.cy.baseVal.value)>.1)overshot.push('incorrect endpoint: '+id);
         for(let i=0;i<=100;i++) {
           const point=path.getPointAtLength(length*i/100),screen=point.matrixTransform(path.getScreenCTM()!);
           if(screen.x>r.left+3&&screen.x<r.right-3&&screen.y>r.top+3&&screen.y<r.bottom-3)crossed.push(id);
-          if(!target.startsWith('part-3.')&&!inside(local(screen)))escaped.push(id);
-          if(point.y<Math.min(a.y,b.y)-130||point.y>Math.max(a.y,b.y)+130)overshot.push(id);
+          if(!inside(local(screen)))escaped.push(id);
+          if(point.y<Math.min(a.y,b.y,local(new DOMPoint(r.left,r.top)).y)-20||point.y>Math.max(a.y,b.y,local(new DOMPoint(r.right,r.bottom)).y)+20)overshot.push(id);
         }
       }
       for(const cap of svg.querySelectorAll('[data-wire-nut] [data-hardware="wire-nut"]')){

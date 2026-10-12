@@ -48,3 +48,62 @@ export function deviceRoute(origin:RoutePoint,end:RoutePoint,device:Component,po
  const entry=origin.x<left?left:origin.x>right?right:origin.x;
  return [origin,{x:entry,y:origin.y},{x:entry,y:rail},{x:approach.x,y:rail},approach,end];
 }
+
+export interface RouteObstacle {left:number;top:number;right:number;bottom:number}
+export function faceObstacle(device:Component,pos:Projection):RouteObstacle {
+ const lamp=device.kind==='lampholder';
+ return {left:pos.x+(lamp?52:26.5)*pos.scale,right:pos.x+(lamp?138:75.5)*pos.scale,top:pos.y+(lamp?56:48)*pos.scale,bottom:pos.y+(lamp?142:245)*pos.scale};
+}
+const inRect=(p:RoutePoint,r:RouteObstacle)=>p.x>r.left+.001&&p.x<r.right-.001&&p.y>r.top+.001&&p.y<r.bottom-.001;
+const segmentClear=(a:RoutePoint,b:RoutePoint,r:RouteObstacle)=>{
+ let lo=0,hi=1;
+ for(const [start,delta,min,max]of [[a.x,b.x-a.x,r.left+.01,r.right-.01],[a.y,b.y-a.y,r.top+.01,r.bottom-.01]]) {
+  if(Math.abs(delta)<.00001){if(start<min||start>max)return true;continue;}
+  const x=(min-start)/delta,y=(max-start)/delta;lo=Math.max(lo,Math.min(x,y));hi=Math.min(hi,Math.max(x,y));
+ }
+ return lo>hi||hi<=0||lo>=1;
+};
+/** Resolve visual placements against the same cavity and face geometry used by
+ * paths. No stored connector memberships or endpoint coordinates are changed. */
+export function clearBoxPoint(point:RoutePoint,box:Component,base:Projection,obstacles:RouteObstacle[],margin=8):RoutePoint {
+ const p=insideBox(point,box,base,margin);
+ const valid=(q:RoutePoint)=>{const a=insideBox(q,box,base,margin);return Math.hypot(a.x-q.x,a.y-q.y)<.01&&!obstacles.some(r=>inRect(q,r));};
+ if(valid(p))return p;
+ const xs=[p.x,...obstacles.flatMap(r=>[r.left-1,r.right+1])],ys=[p.y,...obstacles.flatMap(r=>[r.top-1,r.bottom+1])];
+ let best=p,cost=Infinity;
+ for(const x of xs)for(const y of ys){const q=insideBox({x,y},box,base,margin),d=Math.hypot(q.x-point.x,q.y-point.y);if(d<cost&&valid(q)){best=q;cost=d;}}
+ return best;
+}
+
+/** Visibility graph in inspection coordinates. Every stationary segment stays
+ * in the convex cavity and avoids every mounted face. Rounded corners are
+ * bounded by adjacent segments; there are no fixed Bézier overshoot offsets. */
+export function cavityRoute(origin:RoutePoint,end:RoutePoint,box:Component,base:Projection,faces:RouteObstacle[],lane=0,dragging=false):RoutePoint[] {
+ const gap=6+(5-lane%6)*2;
+ const distance=(p:RoutePoint,r:RouteObstacle)=>Math.hypot(Math.max(r.left-p.x,0,p.x-r.right),Math.max(r.top-p.y,0,p.y-r.bottom));
+ const active=faces.map(r=>{
+  const clearance=Math.max(0,Math.min(gap,distance(origin,r)-1,distance(end,r)-1));
+  return {left:r.left-clearance,top:r.top-clearance,right:r.right+clearance,bottom:r.bottom+clearance};
+ });
+ const inside=(p:RoutePoint)=>{const q=insideBox(p,box,base,4);return Math.hypot(p.x-q.x,p.y-q.y)<.01;};
+ const valid=(p:RoutePoint)=>inside(p)&&!active.some(r=>inRect(p,r));
+ const candidates=[origin,end,...active.flatMap(r=>[{x:r.left,y:r.top},{x:r.right,y:r.top},{x:r.right,y:r.bottom},{x:r.left,y:r.bottom}])];
+ const nodes=candidates.filter((p,i)=>i<2||valid(p));
+ const costs=nodes.map(()=>Infinity),prev=nodes.map(()=>-1),visited=new Set<number>();costs[0]=0;
+ while(visited.size<nodes.length){
+  let index=-1;for(let i=0;i<nodes.length;i++)if(!visited.has(i)&&(index<0||costs[i]!<costs[index]!))index=i;
+  if(index<0||!Number.isFinite(costs[index]!)||index===1)break;
+  visited.add(index);
+  for(let j=0;j<nodes.length;j++){
+   if(j===index||visited.has(j))continue;
+   const a=nodes[index]!,b=nodes[j]!;
+   if(!active.every(r=>segmentClear(a,b,r)))continue;
+   if(!dragging&&(!inside(a)||!inside(b)))continue;
+   const cost=costs[index]!+Math.hypot(b.x-a.x,b.y-a.y)+8;
+   if(cost<costs[j]!){costs[j]=cost;prev[j]=index;}
+  }
+ }
+ if(!Number.isFinite(costs[1]!))return [origin,end];
+ const points=[end];for(let i=prev[1]!;i>=0;i=prev[i]!)points.unshift(nodes[i]!);
+ return points;
+}
