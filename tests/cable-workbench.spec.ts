@@ -46,6 +46,9 @@ test('two real cables follow both boxes and inspection exposes their same discon
 test('cable and connected box deletion, cancellation, reset and history preserve attachments',async({page})=>{
   await page.goto('/?view=cables');await place(page,'box',430,340);await place(page,'box',960,460);await cableDrag(page,'part-1','right','part-2','left');
   await page.mouse.click(1200,850);
+  // Clearing selection can wrap the toolbar and trigger the SVG ResizeObserver.
+  // Measure the fresh path after layout settles, rather than clicking old geometry.
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
   const midpoint=await page.locator('[data-installed-cable] path').first().evaluate((el)=>{const path=el as SVGPathElement;const p=path.getPointAtLength(path.getTotalLength()/2).matrixTransform(path.getScreenCTM()!);return {x:p.x,y:p.y};});
   await page.mouse.click(midpoint.x,midpoint.y);await expect(page.locator('.wb-cable-label')).toContainText('cable-1');
   await page.getByRole('button',{name:'Delete',exact:true}).click();await expect(page.locator('[data-installed-cable]')).toHaveCount(0);
