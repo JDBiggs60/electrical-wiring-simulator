@@ -86,3 +86,8 @@ body.workbench-page { margin:0; background:#edf0eb; color:#354038; font-family:s
 .wb-ground-guide li { margin:4px 0; }
 .wb-ground-guide p { margin:4px 0; font-size:11px; line-height:1.5; }
 [data-ground-end-label],[data-ground-origin-label],[data-ground-nut-label],[data-cable-direction] { fill:#526744; paint-order:stroke; stroke:#fafbf6; stroke-width:3px; }
+
+[data-operate-switch],[data-operate-breaker]{cursor:pointer} [data-installed-bulb][data-energized="true"]{filter:drop-shadow(0 0 7px #ffe48b)}
+.wb-fault-flash{position:fixed;z-index:10000;width:42px;height:42px;pointer-events:none;border:3px solid #d89a35;border-radius:50%;background:#f2cd7770;transform:translate(-50%,-50%);animation:wb-fault .4s ease-out}
+@keyframes wb-fault{from{opacity:1;scale:.7}to{opacity:.25;scale:1.15}}
+@media(prefers-reduced-motion:reduce){.wb-fault-flash{animation:none;background:transparent} [data-installed-bulb]{filter:none}}

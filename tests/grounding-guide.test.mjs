@@ -21,5 +21,5 @@ test('inspection shows recognizable front faces and main lampholder bulb without
  const s=createWorkbench(),sw=addPart(s,'switch',0,0),r=addPart(s,'receptacle',200,0),light=addPart(s,'lampholder',400,0),before=JSON.stringify(s);
  for(const p of [sw,r]){const art=terminalDevice(p);assert.match(art,/data-inspection-projection="orthographic-front"/);assert.match(art,/data-inspection-face="front"/);for(const t of p.terminals)assert.ok(art.includes(`data-terminal-id="${t.id}"`));assert.doesNotMatch(art,/terminal-rear/);}
  assert.match(terminalDevice(sw),/TOGGLE/);assert.match(terminalDevice(r),/15A · 125V/);
- assert.match(keylessLampholder(light),/data-installed-bulb data-energized="false"/);assert.doesNotMatch(keylessLampholder(light,true),/data-installed-bulb/);assert.equal(JSON.stringify(s),before);
+ assert.match(keylessLampholder(light),/data-installed-bulb data-energized="false"/);assert.match(keylessLampholder(light,true),/data-installed-bulb data-energized="false"/);assert.equal(JSON.stringify(s),before);
 });

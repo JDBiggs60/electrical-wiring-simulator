@@ -1,10 +1,10 @@
 export type PartKind = 'box' | 'box2' | 'box3' | 'ceiling' | 'lampholder' | 'switch' | 'receptacle' | 'panel';
-export interface Component { id: string; kind: PartKind; x: number; y: number; parentId: string | null; receptacle?: ReceptacleHardware; terminals: BranchTerminal[]; panel?: PanelHardware; slot?: number; pulledOut?: boolean }
+export interface Component { id: string; kind: PartKind; x: number; y: number; parentId: string | null; receptacle?: ReceptacleHardware; terminals: BranchTerminal[]; panel?: PanelHardware; slot?: number; pulledOut?: boolean; switchClosed?: boolean }
 export interface BranchTerminal { id: string; componentId: string; kind: 'hot' | 'neutral' | 'ground'; x: number; y: number; termination: string | null }
 export interface PanelHardware {
   designation: 'subpanel'; neutralIsolated: true; groundBarBondedToEnclosure: true;
   source: { kind: 'protected-simulated-120v'; accessible: false };
-  spaces: { id: string; position: number; breaker: null | { id: string; amps: 15; poles: 1; terminalId: string; on: boolean } }[];
+  spaces: { id: string; position: number; breaker: null | { id: string; amps: 15; poles: 1; terminalId: string; on: boolean; tripped?: boolean; tripReason?: string } }[];
 }
 export interface ReceptacleHardware {
   rating: '15A 125V NEMA 5-15R';
@@ -78,14 +78,19 @@ export function deletePart(state: Workbench, id: string) {
 }
 export function workbenchHistory(state: Workbench) {
   const past: Workbench[] = [], future: Workbench[] = [];
+  function restore(snapshot:Workbench){
+    const operating=(state.components.some(p=>p.kind==='lampholder'||p.panel?.spaces.some(b=>b.breaker?.tripped))||snapshot.components.some(p=>p.kind==='lampholder'))?{power:state.power,parts:structuredClone(state.components)}:null;
+    Object.assign(state,structuredClone(snapshot));
+    if(operating){state.power=operating.power;for(const p of state.components){const live=operating.parts.find(q=>q.id===p.id);if(live){p.switchClosed=live.switchClosed;for(const space of p.panel?.spaces??[]){const b=live.panel?.spaces.find(q=>q.breaker?.id===space.breaker?.id)?.breaker;if(b&&space.breaker){space.breaker.on=b.on;space.breaker.tripped=b.tripped;space.breaker.tripReason=b.tripReason;}}}}}
+  }
   return {
     get canUndo() { return past.length > 0; }, get canRedo() { return future.length > 0; },
     record(before: Workbench) {
       if (JSON.stringify(before) === JSON.stringify(state)) return;
       past.push(structuredClone(before)); future.length = 0;
     },
-    undo() { const prior = past.pop(); if (prior) { future.push(structuredClone(state)); Object.assign(state,structuredClone(prior)); } },
-    redo() { const next = future.pop(); if (next) { past.push(structuredClone(state)); Object.assign(state,structuredClone(next)); } },
+    undo() { const prior = past.pop(); if (prior) { future.push(structuredClone(state)); restore(prior); } },
+    redo() { const next = future.pop(); if (next) { past.push(structuredClone(state)); restore(next); } },
   };
 }
 

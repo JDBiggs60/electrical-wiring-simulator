@@ -61,19 +61,24 @@ export function pruneWiring(s:Workbench) {
  for(const {end}of wireEnds(s))end.termination=s.connections.find(c=>c.fromId===end.id)?.toId??null;
  for(const p of s.components)for(const t of p.terminals)t.termination=s.connections.find(c=>c.toId===t.id)?.fromId??null;
 }
-export function testReceptacle(s:Workbench,deviceId?:string) {
- const device=s.components.find(p=>p.kind==='receptacle'&&(!deviceId||p.id===deviceId));
+export function branchGraph(s:Workbench,options:{switches?:boolean;closeSwitches?:boolean;breakersOn?:boolean;breakerId?:string;noBreakers?:boolean}={}) {
  const parent=new Map<string,string>();const find=(id:string):string=>{const p=parent.get(id);if(!p){parent.set(id,id);return id;}if(p===id)return id;const root=find(p);parent.set(id,root);return root;};const join=(a:string,b:string)=>parent.set(find(a),find(b));const same=(a:string,b:string)=>find(a)===find(b);
  for(const c of s.cables)for(const w of c.conductors)join(w.ends[0].id,w.ends[1].id);
  for(const w of s.pigtails)join(w.ends[0]!.id,w.ends[1]!.id);
  for(const c of s.connections)join(c.fromId,c.toId);
  for(const p of s.components)for(const tab of p.receptacle?.tabs??[])if(tab.intact)join(...tab.terminalIds);
+ if(options.switches)for(const p of s.components)if(p.kind==='switch'&&(options.closeSwitches||p.switchClosed))join(`${p.id}.a`,`${p.id}.b`);
  const sources=s.components.filter(p=>p.panel).map(p=>{
   const h=`${p.id}.source.hot`,n=`${p.id}.source.neutral`,g=`${p.id}.source.ground`;
   for(const t of p.terminals)if(t.kind==='neutral')join(t.id,n);else if(t.kind==='ground')join(t.id,g);
-  for(const space of p.panel!.spaces)if(space.breaker?.on)join(space.breaker.terminalId,h);
-  return {h,n,g};
+  for(const space of p.panel!.spaces)if(space.breaker&&!options.noBreakers&&(!options.breakerId||space.breaker.id===options.breakerId)&&(options.breakersOn||(space.breaker.on&&!space.breaker.tripped)))join(space.breaker.terminalId,h);
+  return {h,n,g,panelId:p.id};
  });
+ return {same,sources};
+}
+export function testReceptacle(s:Workbench,deviceId?:string) {
+ const device=s.components.find(p=>p.kind==='receptacle'&&(!deviceId||p.id===deviceId));
+ const {same,sources}=branchGraph(s);
  const fault=sources.some(p=>same(p.h,p.n)||same(p.h,p.g)||same(p.n,p.g));
  if(!device?.parentId)return {status:'No power',message:'Mount one receptacle in a steel box and install its branch cable.',volts:0,energized:false,safe:false};
  const h=`${device.id}.hot.upper`,n=`${device.id}.neutral.upper`,g=`${device.id}.ground`,box=`${device.parentId}.box`;
