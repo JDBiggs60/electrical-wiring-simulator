@@ -35,6 +35,19 @@ export function disconnect(s:Workbench,id:string) {
  for(const p of s.components)for(const t of p.terminals)if(removed.some(c=>c.toId===t.id))t.termination=null;
  return null;
 }
+/** Select one real conductor end, never a whole terminal or wire nut. */
+export function disconnectSelectedWire(s:Workbench,endId:string) {
+ if(s.power)return 'Turn simulated power OFF before disconnecting a wire.';
+ const end=wireEnds(s).find(w=>w.end.id===endId)?.end;
+ const edge=s.connections.find(c=>c.fromId===endId);
+ if(!end||!edge)return 'Select a connected conductor end first.';
+ const nut=s.connectors.find(c=>c.id===edge.toId);
+ const error=disconnect(s,endId);if(error)return error;
+ // A cap with one remaining conductor is no longer a splice. Release that
+ // member too, but keep every unrelated edge and every conductor identity.
+ if(nut&&nut.endIds.length<2)removeWireNut(s,nut.id);
+ return null;
+}
 export function connectEnd(s:Workbench,endId:string,targetId:string) {
  const wire=wireEnds(s).find(w=>w.end.id===endId),target=wiringNodes(s).find(t=>t.id===targetId);
  if(!wire||!target) return 'Drag a loose conductor end to an electrical terminal or ground connector; mounting screws are not terminals.';

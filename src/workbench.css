@@ -91,3 +91,5 @@ body.workbench-page { margin:0; background:#edf0eb; color:#354038; font-family:s
 .wb-fault-flash{position:fixed;z-index:10000;width:42px;height:42px;pointer-events:none;border:3px solid #d89a35;border-radius:50%;background:#f2cd7770;transform:translate(-50%,-50%);animation:wb-fault .4s ease-out}
 @keyframes wb-fault{from{opacity:1;scale:.7}to{opacity:.25;scale:1.15}}
 @media(prefers-reduced-motion:reduce){.wb-fault-flash{animation:none;background:transparent} [data-installed-bulb]{filter:none}}
+.wb-wire-controls label,.wb-header nav label{display:flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:100%;font-size:12px}
+.wb-wire-controls select,.wb-header nav select{width:240px;max-width:100%;min-width:0;border:1px solid #a3b39c;border-radius:4px;padding:7px;background:#fff;color:#354b30}
